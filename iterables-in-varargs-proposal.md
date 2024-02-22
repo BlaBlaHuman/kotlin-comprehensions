@@ -9,42 +9,66 @@ See [KT-12663 Spread (*) operator for Iterable (Collection?) in varargs](https:/
 * [Discussions](#list-of-discussions)
 
 ## Motivaton
-Kotlin provides a special construct for writing a functions with variadic number of arguments.
+* Kotlin provides a special construct for writing a functions with variadic number of arguments.
 However, when the function is designed to receive elements from a single collections, developers prefer using a single parameter instead of varargs. 
-This is due to the fact that varargs require unnecessary overhead, as the spread operator only works on Java arrays, thus the conversion from `Iterable` to `Array` is needed. 
-Moreover, there is a mess regarding boxed `Array<T>` and named arrays (such as `IntArray`):
+This is due to the fact that varargs require unnecessary overhead, as the spread operator, which unpacks a collection and passes its elements of a collection as varargs, only works on Java arrays, thus the conversion from `Iterable` to `Array` is needed. 
   ```Kotlin
   fun printAllInt(vararg ts: Int) {
       ts.forEach { println(it) }
   }
   
   fun main() {
-      printAllInt(*arrayOf(1, 2, 3)) // Type mismatch, IntArray expected, Array<int> found
+      printAllInt(*intArrayOf(1, 2, 3))
       printAllInt(*listOf(1, 2, 3)) // Type mismatch, IntArray expected, List<int> found
   }    
   ```
 
-`SpreadBuilder` class that performs the elements copying of the array passed to spread operator already supports `Iterable` collections, but this is banned on the compiler's frond-end
-(See [SpreadBuilder](https://github.com/JetBrains/kotlin/blob/5e81850bb12dd095dd8d94b5c9ded043e81caf7a/libraries/stdlib/jvm/runtime/kotlin/jvm/internal/SpreadBuilder.java#L13)).
+  `SpreadBuilder` class that performs the elements copying of the array passed to spread operator already supports `Iterable` collections, but this is banned on the compiler's frond-end
+(see [SpreadBuilder](https://github.com/JetBrains/kotlin/blob/5e81850bb12dd095dd8d94b5c9ded043e81caf7a/libraries/stdlib/jvm/runtime/kotlin/jvm/internal/SpreadBuilder.java#L13)).
 
 
-Moreover, inheritance with method overriding is broken in some cases.
-It happens when substituting any primitive type, as the compiled method uses the corresponding array type:
-* `IntArray`
-* `BooleanArray`
-* `ByteArray`
-* `CharArray`
-* `DoubleArray`
-* `FloatArray`
-* `LongArray`
-* `ShortArray`
+* Additionally, inheritance with method overriding is broken in some cases. 
+This is because vararg functions use *Java* `Array` to store all the passed variadic arguments.
+When the type of variadic arguments is explicitly stated as any primitive type, the compiled method uses the corresponding array type:
+  * `IntArray`
+  * `BooleanArray`
+  * `ByteArray`
+  * `CharArray`
+  * `DoubleArray`
+  * `FloatArray`
+  * `LongArray`
+  * `ShortArray`
+
+  However, functions with templated varargs use boxed arrays under the hood.
+  This introduces inconsistency and a lot of type issues. 
+  ```kotlin
+  fun printAllInt(vararg ts: Int) { // Uses IntArray
+    ts.forEach { println(it) }
+  }
+  
+  fun <T>printAllGen(vararg ts: T) { // Uses Array<T>
+      ts.forEach { println(it) }
+  }
+  
+  fun main() {
+      printAllInt(*intArrayOf(1, 2 ,3)) // OK
+      printAllInt(*arrayOf(1, 2 ,3)) // Type mismatch, IntArray expected, Array<Int> found
+      printAllInt(*listOf(1, 2, 3).toIntArray()) // OK
+  
+      printAllGen(*intArrayOf(1, 2 ,3)) // Type mismatch, Array<Int> expected, IntArray found
+      printAllGen(*arrayOf(1, 2 ,3)) // OK
+      printAllGen(*listOf(1, 2, 3).toTypedArray())
+  }
+  ```
+  
+  Templated vararg methods also cannot be overridden by any primitive type substitution due to the same reason.
   ```Kotlin
   interface A<T> {
-      fun foo(vararg x : T) // Array<T> expected
+      fun foo(vararg x : T) // x has type Array<T> 
   }
   
   class B : A<Int> {
-      override fun foo(vararg x: Int) { } // Error, method overrides nothing, IntArray expected
+      override fun foo(vararg x: Int) { } // Error, method overrides nothing, x has type IntArray
   }
   ```
   
@@ -77,7 +101,7 @@ It happens when substituting any primitive type, as the compiled method uses the
   }
   ```
 
-This overhead is the reason why people tend not to use varargs in their code and why this feature is not widely used.
+The mentioned overhead and issues prevent users from having a smooth experience and are the reason why people tend not to use varargs in their code and why this feature is not widely used.
 
 ## List of Discussions
 - [KT-2462](https://youtrack.jetbrains.com/issue/KT-2462) Varargs
