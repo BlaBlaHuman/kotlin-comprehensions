@@ -64,6 +64,32 @@ eventLoop(...) {
 }
 ```
 
+And here are some real-life examples taken from [Task Tracker JetBrains project](https://github.com/JetBrains-Research/tasktracker-3/tree/b6e78c867123332a498828c61720e034b532acbc):
+```kotlin
+private fun removeVirtualFileListener(virtualFiles: List<VirtualFile>) {
+        virtualFiles.forEach { file ->
+            ApplicationManager.getApplication().invokeAndWait {
+                val document = FileDocumentManager.getInstance().getDocument(file)
+                document?.let {
+                    DocumentLogger.removeDocumentLogPrinter(document)
+                    document.removeDocumentListener(listener)
+                }
+            }
+        }
+    }
+
+private fun getContentEntry(url: VirtualFile?, rootModel: ModifiableRootModel): ContentEntry? {
+        rootModel.contentEntries.forEach { e ->
+            url?.let {
+                if (VfsUtilCore.isEqualOrAncestor(e.url, url.url)) {
+                    return e
+                }
+            }
+        }
+        return null
+    }
+```
+
 For simplicity, in this document we will try to rewrite the following code using different approaches:
 
 ```Kotlin
