@@ -49,6 +49,20 @@ fun login(oldAuth: AuthToken): Collection<UserModel> {
 }
 ```
 
+Many Kotlin frameworks incorporate the concept of context-driven programming, in which contexts serve as containers for application parameters. 
+However, in some cases, multiple nested contexts are required just for a few lines of code, leading to a convoluted nesting structure that is difficult to comprehend.
+
+```kotlin
+eventLoop(...) { 
+    withSettings(...) { 
+        withEnviroment(...) { 
+            withAnotherScope(...) {
+              doSomething()
+            }   
+        }
+    }
+}
+```
 
 For simplicity, in this document we will try to rewrite the following code using different approaches:
 
