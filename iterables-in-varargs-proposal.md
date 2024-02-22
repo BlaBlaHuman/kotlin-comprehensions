@@ -57,7 +57,7 @@ When the type of variadic arguments is explicitly stated as any primitive type, 
   
       printAllGen(*intArrayOf(1, 2 ,3)) // Type mismatch, Array<Int> expected, IntArray found
       printAllGen(*arrayOf(1, 2 ,3)) // OK
-      printAllGen(*listOf(1, 2, 3).toTypedArray())
+      printAllGen(*listOf(1, 2, 3).toTypedArray()) // OK
   }
   ```
   
