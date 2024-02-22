@@ -14,36 +14,40 @@ This page is dedicated to researching the possible ways of adding “syntax suga
 
 ## Motivation
 
+After researching a lot of discussions/libraries/tickets on comprehension, chaining, and data transformation
+it was noticed that almost all of them were regarding the readability problems. 
+That's why we decided to focus on this particular issue.
 Kotlin offers a range of expressive and powerful features that greatly enhance working with lambdas and collections. 
 However, during the process of product development, there are cases when the usage of these constructions can result in code that is difficult to read and unnecessarily complex due to deep nesting (example taken from [KT-18861](https://youtrack.jetbrains.com/issue/KT-18861)):
-  ```Kotlin
-  fun login(oldAuth: AuthToken): Collection<UserModel> {
-    credentialService.oauthLogin(oldAuth).flatMap { token ->
-      securityService.getRole(token).flatMap { role ->
-        credentialService.getUserDetails(token, role).map { userDetails ->
-          (token, role, userDetails)
-        }
+```Kotlin
+fun login(oldAuth: AuthToken): Collection<UserModel> {
+  credentialService.oauthLogin(oldAuth).flatMap { token ->
+    securityService.getRole(token).flatMap { role ->
+      credentialService.getUserDetails(token, role).map { userDetails ->
+        (token, role, userDetails)
       }
     }
-      .filter { (token, role, userDetails) -> areValidModelParams(token, role, userDetails) }
-      .flatMap { (token, role, userDetails) ->
-        token.flatMap { t: AuthToken ->
-          role.flatMap { r: Role ->
-            userDetails.map { u: UserDetails ->
-              (t, r, u)
+  }
+    .filter { (token, role, userDetails) -> areValidModelParams(token, role, userDetails) }
+    .flatMap { (token, role, userDetails) ->
+      token.flatMap { t: AuthToken ->
+        role.flatMap { r: Role ->
+          userDetails.map { u: UserDetails ->
+            (t, r, u)
+          }
+        }
+      }
+        .map { (token, role, userDetails) ->
+          promotionsService.getPromotions(token, userDetails).flatMap { promotions ->
+            adService.getAds(token, userDetails).map { ads ->
+              UserModel(token, userDetails, role, promotions, ads)
             }
           }
         }
-          .map { (token, role, userDetails) ->
-            promotionsService.getPromotions(token, userDetails).flatMap { promotions ->
-              adService.getAds(token, userDetails).map { ads ->
-                UserModel(token, userDetails, role, promotions, ads)
-              }
-            }
-          }
-      }
-  }
-  ```
+    }
+}
+```
+
 
 For simplicity, in this document we will try to rewrite the following code using different approaches:
 
@@ -289,8 +293,10 @@ It offers several constructions those allow users to write all the computation l
   ```
 
 * [functional-kotlin](https://github.com/alexandrepiveteau/functional-kotlin) and [funKTionale](https://github.com/MarioAriasC/funKTionale) provide almost identical methods for function composition.
-The idea is very simillar to [pipe-forwarding](#pipe-forwarding). Let's consider [functional-kotlin](https://github.com/alexandrepiveteau/functional-kotlin):
+The idea is very simillar to [forward and backward composition](#pipe-forwarding). Let's consider [functional-kotlin](https://github.com/alexandrepiveteau/functional-kotlin):
   * `f..g == f g`
   * `f.andThen(g) == g..f == g f`
   * `f compose g == f..g == f g`
   * `f forwardCompose g == g..f = g f`
+
+## List of Discussions
