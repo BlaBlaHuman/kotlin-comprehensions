@@ -72,7 +72,9 @@ It happens when substituting any primitive type, as the compiled method uses the
       }
   }
   ```
-  
+
+This overhead is the reason why people tend not to use varargs in their code and why this feature is not widely used.
+
 ## List of Discussions
 - [KT-2462](https://youtrack.jetbrains.com/issue/KT-2462) Varargs
 - [KT-12663](https://youtrack.jetbrains.com/issue/KT-12663) Spread (*) operator for Iterable (Collection?) in varargs
