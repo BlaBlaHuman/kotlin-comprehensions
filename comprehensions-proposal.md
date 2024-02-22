@@ -125,6 +125,9 @@ The most common appearance of list comprehensions in programming languages, name
 ```Python
 [(a, b) for a in Collection1 for b in Collection2 if Condition]
 ```
+```Python
+["FizzBuzz" if x % 3 == 0 and x % 5 == 0 else "Fizz" if x % 3 == 0 else "Buzz" if x % 5 == 0 else str(x) for x in range(1, 101)]
+```
 
 ### List monads
 *Monads* is a widely used concept in function languages. One of the monad types is *List monads*, which is presented is **Haskell**, **Scala** and **F#**.
