@@ -24,6 +24,10 @@ Moreover, there is a mess regarding boxed `Array<T>` and named arrays (such as `
   }    
   ```
 
+`SpreadBuilder` class that performs the elements copying of the array passed to spread operator already supports `Iterable` collections, but this is banned on the compiler's frond-end
+(See [SpreadBuilder](https://github.com/JetBrains/kotlin/blob/5e81850bb12dd095dd8d94b5c9ded043e81caf7a/libraries/stdlib/jvm/runtime/kotlin/jvm/internal/SpreadBuilder.java#L13)).
+
+
 Moreover, inheritance with method overriding is broken in some cases.
 It happens when substituting any primitive type, as the compiled method uses the corresponding array type:
 * `IntArray`
