@@ -5,7 +5,7 @@ See [KT-12663 Spread (*) operator for Iterable (Collection?) in varargs](https:/
 
 ## Table of Contents
 * [Motivation](#motivaton)
-* [Current workarounds](#current-workarounds)
+* [Current Workarounds](#current-workarounds)
 * [Discussions](#list-of-discussions)
 
 ## Motivaton
@@ -72,7 +72,7 @@ When the type of variadic arguments is explicitly stated as any primitive type, 
   }
   ```
   
-## Current workarounds
+## Current Workarounds
 * It is possible to use an `Iterable` collection with varargs functions, but it requires calling an explicit cast to the corresponding `Array` type and creates an additional copy, which is an additional problem (see [KT-17043 Do not create new arrays for pass-through vararg parameters](https://youtrack.jetbrains.com/issue/KT-17043)):
   ```Kotlin
   fun printAllInt(vararg ts: Int) {
