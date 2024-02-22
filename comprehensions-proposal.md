@@ -11,6 +11,7 @@ This page is dedicated to researching the possible ways of adding “syntax suga
   * [Query syntax](#query-syntax)
   * [Pipe-forwarding](#pipe-forwarding)
 * [Library Solutions](#library-solutions)
+* [List of Discussions](#list-of-discussions)
 
 ## Motivation
 
@@ -300,3 +301,13 @@ The idea is very simillar to [forward and backward composition](#pipe-forwarding
   * `f forwardCompose g == g..f = g f`
 
 ## List of Discussions
+* [KT-18861 - Is there possibility that kotlin could support for-comprehensions?](https://youtrack.jetbrains.com/issue/KT-18861)
+* [Kotlin Discussions - For as an expression](https://discuss.kotlinlang.org/t/for-as-an-expression/1795/7)
+* [Kotlin Discussions - Why not multi for?](https://discuss.kotlinlang.org/t/why-not-multi-for/2241)
+* [Kotlin Discussions - Iterate over a collection and create a map](https://discuss.kotlinlang.org/t/iterate-over-a-collection-and-create-a-map/808)
+* [Kotlin Discusssions - 1 Liners for List Comprehension-like operations?](https://discuss.kotlinlang.org/t/1-liners-for-list-comprehension-like-operations/1900)
+* [Kotlin Discussions - Pipe-forward operator |>](https://discuss.kotlinlang.org/t/pipe-forward-operator/2098)
+* [StackOverflow - What is the equivalent of Python list, set, and map comprehensions in Kotlin?](https://stackoverflow.com/questions/50323940/what-is-the-equivalent-of-python-list-set-and-map-comprehensions-in-kotlin)
+* [StackOverflow - Nested comprehension in Kotlin](https://stackoverflow.com/questions/48848023/nested-comprehension-in-kotlin)
+* [StackOverflow - implement a monad comprehension on a list in kotlin using a coroutine](https://stackoverflow.com/questions/67084114/implement-a-monad-comprehension-on-a-list-in-kotlin-using-a-coroutine)
+* [StackOverflow - Does Kotlin support monadic comprehension?](https://stackoverflow.com/questions/34248483/does-kotlin-support-monadic-comprehension)
