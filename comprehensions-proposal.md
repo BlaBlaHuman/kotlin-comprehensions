@@ -6,6 +6,10 @@ This page is dedicated to researching the possible ways of adding “syntax suga
 * [Motivation](#motivation)
 * [Current Workarounds](#current-workarounds-)
 * [Ideas from other Programming Languages](#ideas-from-other-programming-languages-)
+  * [Set-builder notation](#set-builder-notation)
+  * [List monads](#list-monads)
+  * [Query syntax](#query-syntax)
+  * [Pipe-forwarding](#pipe-forwarding)
 * [Library Solutions](#library-solutions)
 
 ## Motivation
@@ -58,7 +62,55 @@ val io = printIntroductionText()
         }
 ```
 ## Current Workarounds 
-
+There are some workarounds presented on the internet:
+* Take a look at this [CodeWars kata](https://www.codewars.com/kata/5a6f71185084d76d2000001b/kotlin).
+The best current solution for this Kata is this:
+  ```kotlin
+  package solution
+  
+  import java.util.Optional
+  
+  fun <T> `for`(lambda: suspend SequenceScope<Optional<T>>.() -> Unit): Optional<T> {
+      return sequence<Optional<T>> { lambda() }.first()
+  }
+  
+  suspend fun <T> SequenceScope<Optional<T>>.yield(value: T) = yield(Optional.of(value))
+  
+  suspend fun <T, U> SequenceScope<Optional<T>>.bind(value: Optional<U>): U {
+      if (!value.isPresent) {
+          yield(Optional.empty())
+      }
+      return value.get()
+  }
+  ```
+* In many cases with nested computations there are only at most two collections involved. 
+Moreover, usually the computations happen on the Cartesion product of these collections.
+That's why the following structure sometimes can be handy (taken from [this StackOverflow answer](https://stackoverflow.com/a/48872563)):
+  ```kotlin
+  fun <F,S> Collection<F>.cartesian(other: Collection<S>): Sequence<Pair<F,S>> =
+      this.asSequence().map { f -> other.asSequence().map { s-> f to s } }.flatten()
+  ```
+  And some of the usages:
+  ```kotlin
+  
+  setA.cartesian(setB).filter { (a,b) ->
+      a.toString().slice(2..3) == b.toString().slice(0..1)
+  }.forEach{ (a,b) -> test.add(setOf(a,b)) }
+  
+  
+  setA.cartesian(setB).filter { (a,b) ->
+      a.toString().slice(2..3) == b.toString().slice(0..1)
+  }.forEach{ test2.add(it) }
+  
+  test.addAll(setA.cartesian(setB).filter { (a,b) ->
+                    a.toString().slice(2..3) == b.toString().slice(0..1)
+              }.map { (a,b) -> setOf(a,b) } )
+  
+  test2.addAll(setA.cartesian(setB).filter { (a,b) ->
+          a.toString().slice(2..3) == b.toString().slice(0..1)
+      })
+  ```
+  
 ## Ideas from other Programming Languages 
 
 ### Set-builder notation
@@ -79,6 +131,18 @@ pyth n =
   , y <- [x .. n] 
   , z <- [y .. n] 
   , x ^ 2 + y ^ 2 == z ^ 2 ]
+```
+
+Let's rewrite our code:
+```Kotlin
+val io =  {
+            worldSizeMiles <- printIntroductionText()
+                    .flatMap { retrieveWorldSizeKm() }
+                    .map { worldSizeKm -> convertKmToMiles(worldSizeKm) }
+            pos <- readInitialPosition(worldSizeMiles)
+            dir <- readInitialDirection()
+          }
+          yield initState(worldSizeMiles, pos, dir)
 ```
 
 
@@ -180,6 +244,21 @@ It offers several constructions those allow users to write all the computation l
                     }
     ```
 
+  Let's omit the fact that it works only on iterables and try to imagine our code with such approach:
+  ```kotlin
+    val result = 
+            doFlatMap(
+                {
+                    printIntroductionText()
+                    .flatMap { retrieveWorldSizeKm() }
+                    .map { worldSizeKm -> convertKmToMiles(worldSizeKm) }
+                },
+                { worldSizeMiles -> readInitialPosition(worldSizeMiles)},
+                { _, _ -> readInitialDirection() },
+                {worldSizeMiles, pos, dir -> initState(worldSizeMiles, pos, dir) }
+            )
+  ```
+
 * [KIO](https://github.com/colomboe/KIO) offers two ways of list comprehension:
   * The first one is simillar to the one used in `Komprehensions`. It utilizes `mapT` and `flatMapT`, those get the result from the argument function and put it in a tuple with the provided input parameter:
   ```Kotlin
@@ -196,6 +275,8 @@ It offers several constructions those allow users to write all the computation l
     * `set` infix function, that is equivalent to the to function but must be used if the same-row function call doesn’t return an effect instance (basically the difference is the same of map and flatMap chaining).
   
     See the [blog-post](https://www.msec.it/blog/comprehension-like-syntax-in-kotlin/) from the author.
+  
+  Our code would look somehow like that:
   ```Kotlin
   val io = 
     printIntroductionText()                 +
@@ -206,3 +287,10 @@ It offers several constructions those allow users to write all the computation l
     initState(worldSizeMiles, pos, dir)
   }}}}
   ```
+
+* [functional-kotlin](https://github.com/alexandrepiveteau/functional-kotlin) and [funKTionale](https://github.com/MarioAriasC/funKTionale) provide almost identical methods for function composition.
+The idea is very simillar to [pipe-forwarding](#pipe-forwarding). Let's consider [functional-kotlin](https://github.com/alexandrepiveteau/functional-kotlin):
+  * `f..g == f g`
+  * `f.andThen(g) == g..f == g f`
+  * `f compose g == f..g == f g`
+  * `f forwardCompose g == g..f = g f`
