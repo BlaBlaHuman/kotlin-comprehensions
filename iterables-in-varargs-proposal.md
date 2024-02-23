@@ -9,9 +9,10 @@ See [KT-12663 Spread (*) operator for Iterable (Collection?) in varargs](https:/
 * [Discussions](#list-of-discussions)
 
 ## Motivaton
-* Kotlin provides a special construct for writing a functions with variadic number of arguments.
-However, when the function is designed to receive elements from a single collections, developers prefer using a single parameter instead of varargs. 
-This is due to the fact that varargs require unnecessary overhead, as the spread operator, which unpacks a collection and passes its elements of a collection as varargs, only works on Java arrays, thus the conversion from `Iterable` to `Array` is needed. 
+Kotlin provides a special construct for writing a functions with variable length parameters.
+However, when the function is designed to receive elements from a single collections, developers prefer using a single collection parameter instead of varargs. 
+This is due to the fact that varargs require unnecessary overhead for a number of reasons:
+*  Spread operator, which unpacks a collection and passes its elements of a collection as varargs, only works on Java arrays, thus the conversion from `Iterable` to `Array` is needed (see the [Kotlin specification](https://kotlinlang.org/spec/expressions.html#spread-operator-expressions)). 
   ```Kotlin
   fun printAllInt(vararg ts: Int) {
       ts.forEach { println(it) }
@@ -24,7 +25,7 @@ This is due to the fact that varargs require unnecessary overhead, as the spread
   ```
 
   `SpreadBuilder` class that performs the elements copying of the array passed to spread operator already supports `Iterable` collections, but this is banned on the compiler's frond-end
-(see [SpreadBuilder](https://github.com/JetBrains/kotlin/blob/5e81850bb12dd095dd8d94b5c9ded043e81caf7a/libraries/stdlib/jvm/runtime/kotlin/jvm/internal/SpreadBuilder.java#L13)).
+(see [SpreadBuilder](https://github.com/JetBrains/kotlin/blob/5e81850bb12dd095dd8d94b5c9ded043e81caf7a/libraries/stdlib/jvm/runtime/kotlin/jvm/internal/SpreadBuilder.java#L13) from the **Kotlin** repo).
 
 
 * Additionally, inheritance with method overriding is broken in some cases. 
@@ -73,7 +74,7 @@ When the type of variadic arguments is explicitly stated as any primitive type, 
   ```
   
 ## Current Workarounds
-* It is possible to use an `Iterable` collection with varargs functions, but it requires calling an explicit cast to the corresponding `Array` type and creates an additional copy, which is an additional problem (see [KT-17043 Do not create new arrays for pass-through vararg parameters](https://youtrack.jetbrains.com/issue/KT-17043)):
+* It is possible to use an `Iterable` collection with varargs functions, but it requires calling an explicit cast to the corresponding `Array` type and creates a copy, which is an additional problem (see [KT-17043 Do not create new arrays for pass-through vararg parameters](https://youtrack.jetbrains.com/issue/KT-17043)):
   ```Kotlin
   fun printAllInt(vararg ts: Int) {
       ts.forEach { println(it) }
