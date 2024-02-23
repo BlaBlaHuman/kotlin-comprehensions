@@ -90,7 +90,8 @@ private fun getContentEntry(url: VirtualFile?, rootModel: ModifiableRootModel): 
     }
 ```
 
-For simplicity, in this document we will try to rewrite the following code using different approaches:
+For simplicity, in this document we will try to rewrite the following code using different approaches.
+This code exploits monads, but this fact doesn't matter anyhow. We could operate on any collection or data type.
 
 ```Kotlin
 val io = printIntroductionText()
@@ -164,9 +165,19 @@ The most common appearance of list comprehensions in programming languages, name
 *Python* is the most known language that chose that way (see the famous [PEP-202](https://peps.python.org/pep-0202/) for more):
 ```Python
 [(a, b) for a in Collection1 for b in Collection2 if Condition]
-```
-```Python
 ["FizzBuzz" if x % 3 == 0 and x % 5 == 0 else "Fizz" if x % 3 == 0 else "Buzz" if x % 5 == 0 else str(x) for x in range(1, 101)]
+```
+
+Let's imagine how our code could look like with such style:
+```kotlin
+io = for {
+    yield initState(worldSizeMiles, pos, dir)
+    for dir in readInitialDirection().flatMap()
+    for pos in readInitialPosition(worldSizeMiles).flatMap()
+    for worldSizeMiles in retrieveWorldSizeKm().map {worldSizeKm -> convertKmToMiles (worldSizeKm) }
+    for _ in printIntroductionText().flatMap()
+}
+
 ```
 
 ### List monads
@@ -312,7 +323,43 @@ It offers several constructions those allow users to write all the computation l
                                 }
                     }
     ```
-
+  This library also has a version for **RxJava** and **Reactor** objects. Here are code examples those were found on GitHub:
+  ```kotlin
+    fun updateProduct(updatedProduct: Product): Mono<Product> {
+      return doFlatMapMono(
+          { getProductById(updatedProduct.id) },
+          { currentProduct -> updateColors(currentProduct.colors, updatedProduct.colors, currentProduct.id).collectList() },
+          { currentProduct, _ -> updateSizes(currentProduct.sizes, updatedProduct.sizes, currentProduct.id).collectList() },
+          { _, _, _ -> productRepository.update(updatedProduct) },
+          { _, newColors, newSizes, _ -> updatedProduct.copy(colors = newColors, sizes = newSizes).toMono() }
+      )
+  }
+  
+  fun getProductById(productId: Int): Mono<Product> {
+      return doFlatMapMono(
+          { productRepository.findById(productId) },
+          { _ -> colorRepository.findByProduct(productId).collectList() },
+          { _, _ -> sizeRepository.findByProduct(productId).collectList() },
+          { product, colors, sizes -> product.copy(colors = colors, sizes = sizes).toMono() }
+      )
+  }
+  ```
+  ```kotlin
+  doSwitchMap(
+              { sites },
+              { Observable.interval(0, 60, TimeUnit.SECONDS) }
+          ) { list, interval ->
+              Observable.just(Pair(list, interval))
+          }
+              .doOnSubscribe { setState { copy(isLoading = true) } }
+              .execute {
+                  copy(
+                      listOfItems = it()?.first ?: emptyList(),
+                      interval = it()?.second ?: 0,
+                      isLoading = false
+                  )
+              }
+  ```
   Let's omit the fact that it works only on iterables and try to imagine our code with such approach:
   ```kotlin
     val result = 
@@ -343,8 +390,8 @@ It offers several constructions those allow users to write all the computation l
     * `to` infix function, that extracts the output of the same-row function call and introduces a new variable in the comprehension context with that value;
     * `set` infix function, that is equivalent to the to function but must be used if the same-row function call doesn’t return an effect instance (basically the difference is the same of map and flatMap chaining).
   
-    See the [blog-post](https://www.msec.it/blog/comprehension-like-syntax-in-kotlin/) from the author.
-  
+  See the [blog-post](https://www.msec.it/blog/comprehension-like-syntax-in-kotlin/) from the author.
+  Unfortunately, no usages of this library were found.
   Our code would look somehow like that:
   ```Kotlin
   val io = 
@@ -363,6 +410,8 @@ The idea is very simillar to [forward and backward composition](#pipe-forwarding
   * `f.andThen(g) == g..f == g f`
   * `f compose g == f..g == f g`
   * `f forwardCompose g == g..f = g f`
+  
+  Unfortunately, no usages were found.
 
 ## List of Discussions
 * [KT-18861 - Is there possibility that kotlin could support for-comprehensions?](https://youtrack.jetbrains.com/issue/KT-18861)
