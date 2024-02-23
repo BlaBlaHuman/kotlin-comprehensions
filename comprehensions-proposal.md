@@ -317,6 +317,8 @@ Such syntax is great for:
 While not being able to rewrite choosen code in this style, I suggest you to look at [this Gist](https://gist.github.com/vjache/5a7977fc6fb113944ae7969f567b7ead#file-pipeforward-kt) 
 that shows a small test implementation for pipes-forward.
 
+It seems like the mentioned approach is not so suitable for Kotlin for [these](https://discuss.kotlinlang.org/t/pipe-forward-operator/2098/14) reasons.
+
 ## Library Solutions
 
 * [Komprehensions](https://github.com/pakoito/Komprehensions) is one of the most starred solution for this problem on *GitHub*.
