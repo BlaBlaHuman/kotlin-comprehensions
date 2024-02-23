@@ -12,6 +12,7 @@ This page is dedicated to researching the possible ways of adding “syntax suga
   * [Pipe-forwarding](#pipe-forwarding)
 * [Library Solutions](#library-solutions)
 * [List of Discussions](#list-of-discussions)
+* [Additional Resources](#additional-resoures)
 
 ## Motivation
 
@@ -91,7 +92,7 @@ private fun getContentEntry(url: VirtualFile?, rootModel: ModifiableRootModel): 
 ```
 
 For simplicity, in this document we will try to rewrite the following code using different approaches.
-This code exploits monads, but this fact doesn't matter anyhow. We could operate on any collection or data type.
+This code exploits monads, but this fact doesn't matter anyhow. We could operate on any collection or data type in a simillar way.
 
 ```Kotlin
 val io = printIntroductionText()
@@ -109,26 +110,6 @@ val io = printIntroductionText()
 ```
 ## Current Workarounds 
 There are some workarounds presented on the internet:
-* Take a look at this [CodeWars kata](https://www.codewars.com/kata/5a6f71185084d76d2000001b/kotlin).
-The best current solution for this Kata is this:
-  ```kotlin
-  package solution
-  
-  import java.util.Optional
-  
-  fun <T> `for`(lambda: suspend SequenceScope<Optional<T>>.() -> Unit): Optional<T> {
-      return sequence<Optional<T>> { lambda() }.first()
-  }
-  
-  suspend fun <T> SequenceScope<Optional<T>>.yield(value: T) = yield(Optional.of(value))
-  
-  suspend fun <T, U> SequenceScope<Optional<T>>.bind(value: Optional<U>): U {
-      if (!value.isPresent) {
-          yield(Optional.empty())
-      }
-      return value.get()
-  }
-  ```
 * In many cases with nested computations there are only at most two collections involved. 
 Moreover, usually the computations happen on the Cartesion product of these collections.
 That's why the following structure sometimes can be handy (taken from [this StackOverflow answer](https://stackoverflow.com/a/48872563)):
@@ -156,6 +137,27 @@ That's why the following structure sometimes can be handy (taken from [this Stac
           a.toString().slice(2..3) == b.toString().slice(0..1)
       })
   ```
+
+* Take a look at this [CodeWars kata](https://www.codewars.com/kata/5a6f71185084d76d2000001b/kotlin) that offers users to write a simple monad comprehension.
+The best current solution for this Kata is this:
+  ```kotlin
+  package solution
+  
+  import java.util.Optional
+  
+  fun <T> `for`(lambda: suspend SequenceScope<Optional<T>>.() -> Unit): Optional<T> {
+      return sequence<Optional<T>> { lambda() }.first()
+  }
+  
+  suspend fun <T> SequenceScope<Optional<T>>.yield(value: T) = yield(Optional.of(value))
+  
+  suspend fun <T, U> SequenceScope<Optional<T>>.bind(value: Optional<U>): U {
+      if (!value.isPresent) {
+          yield(Optional.empty())
+      }
+      return value.get()
+  }
+  ```
   
 ## Ideas from other Programming Languages 
 
@@ -167,6 +169,17 @@ The most common appearance of list comprehensions in programming languages, name
 [(a, b) for a in Collection1 for b in Collection2 if Condition]
 ["FizzBuzz" if x % 3 == 0 and x % 5 == 0 else "Fizz" if x % 3 == 0 else "Buzz" if x % 5 == 0 else str(x) for x in range(1, 101)]
 ```
+In languages with such list comprehensions syntax roughly looks like this:
+```
+#bracket #element #iterator #predicate #bracket
+
+or
+
+#bracket #iterator #predicate #element #bracket
+```
+Such syntax is great for:
+* Working with Cartesian product
+* Working with complex predicates
 
 Let's imagine how our code could look like with such style:
 ```kotlin
@@ -180,8 +193,11 @@ io = for {
 
 ```
 
+
 ### List monads
-*Monads* is a widely used concept in function languages. One of the monad types is *List monads*, which is presented is **Haskell**, **Scala** and **F#**.
+*Monads* is a widely used concept in function languages. One of the monad types is *List monads*, which is presented is **Haskell**, **Scala** and **F#**. 
+
+Take a look at the example from Haskell:
 ```Haskell
 pyth :: Int -> [(Int, Int, Int)]
 pyth n =
@@ -191,6 +207,20 @@ pyth n =
   , z <- [y .. n] 
   , x ^ 2 + y ^ 2 == z ^ 2 ]
 ```
+The code above might look exactly like [Set-Builder notation](#set-builder-notation), but it is actually just a sugar for the monadic approach:
+```Haskell
+pythagoreanTriples :: Integer -> [(Integer, Integer, Integer)]
+pythagoreanTriples n =
+  [1 .. n] >>= (\x ->
+  [x+1 .. n] >>= (\y ->
+  [y+1 .. n] >>= (\z ->
+  if x^2 + y^2 == z^2 then return (x,y,z) else [])))
+```
+
+Such syntax is great for:
+* Working with Cartesian product
+* Working with complex predicates
+* Unwrapping data from different monadic types
 
 Let's rewrite our code:
 ```Kotlin
@@ -227,6 +257,9 @@ IEnumerable<int> numQuery2 =
 ```
 [Here](https://learn.microsoft.com/en-us/dotnet/csharp/linq/standard-query-operators/#query-expression-syntax-table) all the supported operations are listed.
 
+Such syntax is great for:
+* Working with simple product transformations
+
 Our code could look somehow like this:
 ```kotlin
 val io = printIntroductionText()
@@ -258,6 +291,24 @@ The idea introduces several new operators:
 * `<<` (backward composition) - the same as `>>`, but inverted: 
 `(<<) f g x = f (g x)`
 
+Here is a small showcase in *F#*:
+```F#
+let finalSeq = 
+    seq { 0..10 }
+    |> Seq.filter (fun c -> (c % 2) = 0)
+    |> Seq.map ((*) 2)
+    |> Seq.map (sprintf "The value is %i.")
+    
+let addTimesSubtract = add1 >> times2 >> subtract20
+```
+
+Such syntax is great for:
+* Composing functions from both left and right sides
+* Passing data to functions from both left and right sides
+* Languages with partial evaluation
+
+While not being able to rewrite choosen code in this style, I suggest you to look at [this Gist](https://gist.github.com/vjache/5a7977fc6fb113944ae7969f567b7ead#file-pipeforward-kt) 
+that shows a small test implementation for pipes-forward.
 
 ## Library Solutions
 
@@ -390,19 +441,19 @@ It offers several constructions those allow users to write all the computation l
     * `to` infix function, that extracts the output of the same-row function call and introduces a new variable in the comprehension context with that value;
     * `set` infix function, that is equivalent to the to function but must be used if the same-row function call doesn’t return an effect instance (basically the difference is the same of map and flatMap chaining).
   
-  See the [blog-post](https://www.msec.it/blog/comprehension-like-syntax-in-kotlin/) from the author.
+    See the [blog-post](https://www.msec.it/blog/comprehension-like-syntax-in-kotlin/) from the author.
   Unfortunately, no usages of this library were found.
   Our code would look somehow like that:
-  ```Kotlin
-  val io = 
-    printIntroductionText()                 +
-    retrieveWorldSizeKm()                   to  { worldSizeKm ->
-    convertKmToMiles(worldSizeKm)           set { worldSizeMiles ->
-    readInitialPosition(worldSizeMiles)     to  { pos ->
-    readInitialDirection()                  to  { dir ->
-    initState(worldSizeMiles, pos, dir)
-  }}}}
-  ```
+    ```Kotlin
+    val io = 
+      printIntroductionText()                 +
+      retrieveWorldSizeKm()                   to  { worldSizeKm ->
+      convertKmToMiles(worldSizeKm)           set { worldSizeMiles ->
+      readInitialPosition(worldSizeMiles)     to  { pos ->
+      readInitialDirection()                  to  { dir ->
+      initState(worldSizeMiles, pos, dir)
+    }}}}
+    ```
 
 * [functional-kotlin](https://github.com/alexandrepiveteau/functional-kotlin) and [funKTionale](https://github.com/MarioAriasC/funKTionale) provide almost identical methods for function composition.
 The idea is very simillar to [forward and backward composition](#pipe-forwarding). Let's consider [functional-kotlin](https://github.com/alexandrepiveteau/functional-kotlin):
@@ -424,3 +475,9 @@ The idea is very simillar to [forward and backward composition](#pipe-forwarding
 * [StackOverflow - Nested comprehension in Kotlin](https://stackoverflow.com/questions/48848023/nested-comprehension-in-kotlin)
 * [StackOverflow - implement a monad comprehension on a list in kotlin using a coroutine](https://stackoverflow.com/questions/67084114/implement-a-monad-comprehension-on-a-list-in-kotlin-using-a-coroutine)
 * [StackOverflow - Does Kotlin support monadic comprehension?](https://stackoverflow.com/questions/34248483/does-kotlin-support-monadic-comprehension)
+
+## Additional Resoures:
+* [Rosetta Code -List comprehensions](https://rosettacode.org/wiki/List_comprehensions#)
+* [Wikipedia - Comparison of programming languages (list comprehension)](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(list_comprehension))
+* [List comprehensions across languages](https://langexplr.blogspot.com/2007/02/list-comprehensions-across-languages_18.html)
+* [Rosetta Code - List Monad](https://rosettacode.org/wiki/Monads/List_monad)
