@@ -196,7 +196,8 @@ val io =  {
 
 ### Query syntax
 *Query syntax* is a very rare mechanism, which syntax looks like a database query. 
-From all the mainstream languages, *C#* seems like the only one that has this kind of construction (see [LINQ](https://learn.microsoft.com/en-us/dotnet/csharp/linq/)):
+From all the mainstream languages, *C#* seems like the only one that has this kind of construction (see [LINQ](https://learn.microsoft.com/en-us/dotnet/csharp/linq/)). 
+It can be written either in query syntax or in method syntax:
 ```C#
 int[] numbers = [ 5, 10, 8, 3, 6, 12 ];
 
@@ -212,6 +213,26 @@ IEnumerable<int> numQuery2 =
     numbers
     .Where(num => num % 2 == 0)
     .OrderBy(n => n);
+```
+[Here](https://learn.microsoft.com/en-us/dotnet/csharp/linq/standard-query-operators/#query-expression-syntax-table) all the supported operations are listed.
+
+Our code could look somehow like this:
+```kotlin
+val io = printIntroductionText()
+    .SelectMany(_ => retrieveWorldSizeKm())
+    .Select(worldSizeKm => convertKmToMiles(worldSizeKm))
+    .SelectMany(worldSizeMiles => readInitialPosition(worldSizeMiles)
+        .SelectMany(pos => readInitialDirection()
+            .SelectMany(dir => initState(worldSizeMiles, pos, dir))));
+
+val io = 
+    (from _ in printIntroductionText()
+    from worldSizeKm in retrieveWorldSizeKm()
+    let worldSizeMiles = convertKmToMiles(worldSizeKm)
+    from pos in readInitialPosition(worldSizeMiles)
+    from dir in readInitialDirection()
+    from state in initState(worldSizeMiles, pos, dir)
+    select state);
 ```
 
 ### Pipe-forwarding
