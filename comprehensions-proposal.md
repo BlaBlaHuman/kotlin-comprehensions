@@ -474,26 +474,26 @@ The idea is very simillar to [forward and backward composition](#pipe-forwarding
   Unfortunately, no usages were found.
 
 * [kotlin-monads](https://github.com/h0tk3y/kotlin-monads) offers *do-notation* and *list-monad* based on *Kotlin-coroutines*:
-```kotlin
-val m = doReturning(MonadListReturn) {
-    val x = bind(monadListOf(1, 2, 3))
-    val y = bind(monadListOf(x, x + 1))
-    monadListOf(y, x * y)
-}
-
-val m = monadListOf(1, 2, 3).bindDo { x ->
-    val y = bind(monadListOf(x, x + 1))
-    monadListOf(y, x * y)
-}
-
-val m = monadListOf(1, 2, 3).bind { x ->
-    monadListOf(x, x + 1).bind { y -> 
-        monadList(y, x * y)
-    }
-}
-
-assertEquals(monadListOf(1, 1, 2, 2, 2, 4, 3, 6, 3, 9, 4, 12), m)
-```
+  ```kotlin
+  val m = doReturning(MonadListReturn) {
+      val x = bind(monadListOf(1, 2, 3))
+      val y = bind(monadListOf(x, x + 1))
+      monadListOf(y, x * y)
+  }
+  
+  val m = monadListOf(1, 2, 3).bindDo { x ->
+      val y = bind(monadListOf(x, x + 1))
+      monadListOf(y, x * y)
+  }
+  
+  val m = monadListOf(1, 2, 3).bind { x ->
+      monadListOf(x, x + 1).bind { y -> 
+          monadList(y, x * y)
+      }
+  }
+  
+  assertEquals(monadListOf(1, 1, 2, 2, 2, 4, 3, 6, 3, 9, 4, 12), m)
+  ```
 
 ## List of Discussions
 * [KT-18861 - Is there possibility that kotlin could support for-comprehensions?](https://youtrack.jetbrains.com/issue/KT-18861)
