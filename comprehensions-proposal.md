@@ -216,7 +216,14 @@ pythagoreanTriples n =
   [y+1 .. n] >>= (\z ->
   if x^2 + y^2 == z^2 then return (x,y,z) else [])))
 ```
-
+We can also write it using *do-notation*:
+```haskell
+pythagoreanTriples :: Integer -> [(Integer, Integer, Integer)]
+pythagoreanTriples n = do x <- [1 .. n]
+                          y <- [x+1 .. n]
+                          z <- [y+1 .. n]
+                          if x^2 + y^2 == z^2 then return (x,y,z) else []
+```
 Such syntax is great for:
 * Working with Cartesian product
 * Working with complex predicates
@@ -463,6 +470,28 @@ The idea is very simillar to [forward and backward composition](#pipe-forwarding
   * `f forwardCompose g == g..f = g f`
   
   Unfortunately, no usages were found.
+
+* [kotlin-monads](https://github.com/h0tk3y/kotlin-monads) offers *do-notation* and *list-monad* based on *Kotlin-coroutines*:
+```kotlin
+val m = doReturning(MonadListReturn) {
+    val x = bind(monadListOf(1, 2, 3))
+    val y = bind(monadListOf(x, x + 1))
+    monadListOf(y, x * y)
+}
+
+val m = monadListOf(1, 2, 3).bindDo { x ->
+    val y = bind(monadListOf(x, x + 1))
+    monadListOf(y, x * y)
+}
+
+val m = monadListOf(1, 2, 3).bind { x ->
+    monadListOf(x, x + 1).bind { y -> 
+        monadList(y, x * y)
+    }
+}
+
+assertEquals(monadListOf(1, 1, 2, 2, 2, 4, 3, 6, 3, 9, 4, 12), m)
+```
 
 ## List of Discussions
 * [KT-18861 - Is there possibility that kotlin could support for-comprehensions?](https://youtrack.jetbrains.com/issue/KT-18861)
