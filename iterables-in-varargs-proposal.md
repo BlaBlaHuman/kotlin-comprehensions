@@ -102,6 +102,27 @@ When the type of variadic arguments is explicitly stated as any primitive type, 
   }
   ```
 
+* One of the [proposed workarounds](https://discuss.kotlinlang.org/t/scalability-issue-spread-operator-with-collections/8466) to avoid copying is to call a utility method in *Java* that calls the original vararg function:
+  ```Java
+  // Java
+  public class VarargUtil {
+    public static void passArrayAsVarargs(@NotNull String[] ids) {
+        MainKt.processIds(ids); //processIds accepts variable arguments
+    }
+  }
+  ```
+  ```kotlin
+  // Kotlin
+  fun processIds(vararg ids: String) {
+    ...
+  }
+
+  fun main() { 
+    val ids: List<String> = listOf("...")
+    passArrayAsVarargs(ids)
+  }
+  ```
+
 The mentioned overhead and issues prevent users from having a smooth experience and are the reason why people tend not to use varargs in their code and why this feature is not widely used.
 
 ## List of Discussions
@@ -117,3 +138,4 @@ The mentioned overhead and issues prevent users from having a smooth experience 
 - [KT-26146](https://youtrack.jetbrains.com/issue/KT-26146) Unable to override generic function with "primitive" vararg type parameter
 - [KT-30837](https://youtrack.jetbrains.com/issue/KT-30837) Confusing error message for passing a list/collection to `spread` operator
 - [KT-64324](https://youtrack.jetbrains.com/issue/KT-64324) Enum entries should be spreadable
+- [Kotlin-Discussions | Scalability Issue: Spread operator with collections](https://discuss.kotlinlang.org/t/scalability-issue-spread-operator-with-collections/8466)
