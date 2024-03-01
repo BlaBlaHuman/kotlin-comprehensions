@@ -13,23 +13,23 @@ Kotlin provides a special construct for writing a functions with variable length
 However, when the function is designed to receive elements from a single collections, developers prefer using a single collection parameter instead of varargs. 
 This is due to the fact that varargs require unnecessary overhead for a number of reasons:
 *  Spread operator, which unpacks a collection and passes its elements of a collection as varargs, only works on Java arrays, thus the conversion from `Iterable` to `Array` is needed (see the [Kotlin specification](https://kotlinlang.org/spec/expressions.html#spread-operator-expressions)). 
-  ```Kotlin
-  fun printAllInt(vararg ts: Int) {
-      ts.forEach { println(it) }
-  }
-  
-  fun main() {
-      printAllInt(*intArrayOf(1, 2, 3))
-      printAllInt(*listOf(1, 2, 3)) // Type mismatch, IntArray expected, List<int> found
-  }    
-  ```
+    ```Kotlin
+    fun printAllInt(vararg ts: Int) {
+        ts.forEach { println(it) }
+    }
+    
+    fun main() {
+        printAllInt(*intArrayOf(1, 2, 3))
+        printAllInt(*listOf(1, 2, 3)) // Type mismatch, IntArray expected, List<int> found
+    }    
+    ```
 
-  `SpreadBuilder` class that performs the elements copying of the array passed to spread operator already supports `Iterable` collections, but this is banned on the compiler's frond-end
-(see [SpreadBuilder](https://github.com/JetBrains/kotlin/blob/5e81850bb12dd095dd8d94b5c9ded043e81caf7a/libraries/stdlib/jvm/runtime/kotlin/jvm/internal/SpreadBuilder.java#L13) from the **Kotlin** repo).
+The spread operator creates a copy under the hood and it is a subject of many ongoing discussions (see [KT-17043 Do not create new arrays for pass-through vararg parameters](https://youtrack.jetbrains.com/issue/KT-17043)).
 
-A quick note on copying: 
-As the spread operator already creates a copy under the hood, it is a subject of many discussions (see [KT-17043 Do not create new arrays for pass-through vararg parameters](https://youtrack.jetbrains.com/issue/KT-17043)).
-However, removing this could lead to data leaks and unexpected behaviour.
+`SpreadBuilder` class that performs the elements copying of the array passed to spread operator already supports `Iterable` collections, but this is banned on the compiler's frond-end
+  (see [SpreadBuilder](https://github.com/JetBrains/kotlin/blob/5e81850bb12dd095dd8d94b5c9ded043e81caf7a/libraries/stdlib/jvm/runtime/kotlin/jvm/internal/SpreadBuilder.java#L13) from the **Kotlin** repo).
+
+
 
 * Additionally, inheritance with method overriding is broken in some cases. 
 This is because vararg functions use *Java* `Array` to store all the passed variadic arguments.
