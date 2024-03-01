@@ -141,4 +141,6 @@ The mentioned overhead and issues prevent users from having a smooth experience 
 - [KT-26146](https://youtrack.jetbrains.com/issue/KT-26146) Unable to override generic function with "primitive" vararg type parameter
 - [KT-30837](https://youtrack.jetbrains.com/issue/KT-30837) Confusing error message for passing a list/collection to `spread` operator
 - [KT-64324](https://youtrack.jetbrains.com/issue/KT-64324) Enum entries should be spreadable
+- [KT-27013](https://youtrack.jetbrains.com/issue/KT-27013/Spread-operator-doesnt-work-on-primitive-type-vararg-parameters) Spread operator doesn't work on primitive type vararg parameters
 - [Kotlin-Discussions | Scalability Issue: Spread operator with collections](https://discuss.kotlinlang.org/t/scalability-issue-spread-operator-with-collections/8466)
+- [StackOverflow | Question regarding spread operator and varargs](https://www.reddit.com/r/Kotlin/comments/9gkfdv/question_regarding_spread_operator_and_varargs/)
