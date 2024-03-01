@@ -8,6 +8,7 @@ This page is dedicated to researching the possible ways of adding “syntax suga
 * [Ideas from other Programming Languages](#ideas-from-other-programming-languages-)
   * [Set-builder notation](#set-builder-notation)
   * [List monads](#list-monads)
+  * [Star-notation or Spread operator](#star-notation-or-spread-operator)
   * [Query syntax](#query-syntax)
   * [Pipe-forwarding](#pipe-forwarding)
 * [Library Solutions](#library-solutions)
@@ -254,6 +255,49 @@ val io =  {
           }
           yield initState(worldSizeMiles, pos, dir)
 ```
+
+### Star-notation or Spread operator
+Taken from [KT-59052](https://youtrack.jetbrains.com/issue/KT-59052/Star-notation-for-functorial-applicative-and-monadic-decorators) proposal.
+This approach goes hand-in-hand with list monads and can be observed in [Groovy](https://www.logicbig.com/tutorials/misc/groovy/spread-operator.html).
+> The spread-dot operator (*.) is used to invoke an action on all items of an aggregate object.
+
+Spread-operator allows transforming all inner elements of a boxed type just as `map` does:
+```kotlin
+val persons = listOf(
+  Person(name = "Peter"), 
+  Person(name = "Amir"),
+  Person(name = "Wei")
+)
+
+val lengths = persons*.name.length
+// = persons.map {it.name.length}
+```
+
+It can be used for unwrapping data from monadic types and creating a new monad just from the obtained result:
+```kotlin
+val a: Deferred<Int>
+val b: Deferred<Int>
+
+val c: Deferred<Int> = *( *a + *b )
+```
+
+In case with several chained spread calls, all the intermediate calls are equivalents to `flatMap`:
+```kotlin
+val persons = listOf(
+  Person(name = "Peter", children = emptyList()), 
+  Person(name = "Amir", children = listOf(Person(name = "Nada"))),
+  Person(name = "Wei", children = listOf(Person(name = "Ada"), Person(name = "Alexei")))
+)
+
+val childrenNames = persons*.children*.name
+// = persons.flatMap {it.children}.map {it.name}
+```
+
+Such syntax is great for:
+* Unwrapping monads
+* Chaining calls on one monad
+
+Due to the fact that our original code involves several monads with overlapping context, it's not that easy to rewrite it using this style.
 
 
 ### Query syntax
@@ -510,8 +554,9 @@ The idea is very simillar to [forward and backward composition](#pipe-forwarding
   ```
 
 ## List of Discussions
-* [KT-18861 - Is there possibility that kotlin could support for-comprehensions?](https://youtrack.jetbrains.com/issue/KT-18861)
+* [KT-18861 Is there possibility that kotlin could support for-comprehensions?](https://youtrack.jetbrains.com/issue/KT-18861)
 * [KT-14983 Collection builder convention](https://youtrack.jetbrains.com/issue/KT-14983/Collection-builder-convention)
+* [KT-59052 Star-notation for functorial, applicative and monadic decorators](https://youtrack.jetbrains.com/issue/KT-59052/Star-notation-for-functorial-applicative-and-monadic-decorators)
 * [Kotlin Discussions - For as an expression](https://discuss.kotlinlang.org/t/for-as-an-expression/1795/7)
 * [Kotlin Discussions - Why not multi for?](https://discuss.kotlinlang.org/t/why-not-multi-for/2241)
 * [Kotlin Discussions - Iterate over a collection and create a map](https://discuss.kotlinlang.org/t/iterate-over-a-collection-and-create-a-map/808)
