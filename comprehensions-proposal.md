@@ -181,6 +181,21 @@ Such syntax is great for:
 * Working with Cartesian product
 * Working with complex predicates
 
+With such syntax it could be possible to generate collections in an other way (taken from [KT-14983](https://youtrack.jetbrains.com/issue/KT-14983/Collection-builder-convention)):
+```kotlin
+val collection = listOf(1, 2, 3)
+val ex = HashSet().(for (x in collection) if (x % 2 == 0) x * x else continue)
+
+// instead of
+
+val ex = collection.filter {
+        it % 2 == 0
+    }.map {
+        it * it
+    }.toHashSet()
+
+```
+
 Let's imagine how our code could look like with such style:
 ```kotlin
 io = for {
@@ -190,7 +205,6 @@ io = for {
     for worldSizeMiles in retrieveWorldSizeKm().map {worldSizeKm -> convertKmToMiles (worldSizeKm) }
     for _ in printIntroductionText().flatMap()
 }
-
 ```
 
 
@@ -497,6 +511,7 @@ The idea is very simillar to [forward and backward composition](#pipe-forwarding
 
 ## List of Discussions
 * [KT-18861 - Is there possibility that kotlin could support for-comprehensions?](https://youtrack.jetbrains.com/issue/KT-18861)
+* [KT-14983 Collection builder convention](https://youtrack.jetbrains.com/issue/KT-14983/Collection-builder-convention)
 * [Kotlin Discussions - For as an expression](https://discuss.kotlinlang.org/t/for-as-an-expression/1795/7)
 * [Kotlin Discussions - Why not multi for?](https://discuss.kotlinlang.org/t/why-not-multi-for/2241)
 * [Kotlin Discussions - Iterate over a collection and create a map](https://discuss.kotlinlang.org/t/iterate-over-a-collection-and-create-a-map/808)
