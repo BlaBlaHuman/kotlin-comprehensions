@@ -301,6 +301,8 @@ Due to the fact that our original code involves several monads with overlapping 
 
 
 ### Query syntax
+See [KT-1254](https://youtrack.jetbrains.com/issue/KT-12542/Infix-Method-Chaining-C-LINQ).
+
 *Query syntax* is a very rare mechanism, which syntax looks like a database query. 
 From all the mainstream languages, *C#* seems like the only one that has this kind of construction (see [LINQ](https://learn.microsoft.com/en-us/dotnet/csharp/linq/)). 
 It can be written either in query syntax or in method syntax:
@@ -557,6 +559,7 @@ The idea is very simillar to [forward and backward composition](#pipe-forwarding
 * [KT-18861 Is there possibility that kotlin could support for-comprehensions?](https://youtrack.jetbrains.com/issue/KT-18861)
 * [KT-14983 Collection builder convention](https://youtrack.jetbrains.com/issue/KT-14983/Collection-builder-convention)
 * [KT-59052 Star-notation for functorial, applicative and monadic decorators](https://youtrack.jetbrains.com/issue/KT-59052/Star-notation-for-functorial-applicative-and-monadic-decorators)
+* [KT-12542 Infix Method Chaining - C# LINQ](https://youtrack.jetbrains.com/issue/KT-12542/Infix-Method-Chaining-C-LINQ)
 * [Kotlin Discussions - For as an expression](https://discuss.kotlinlang.org/t/for-as-an-expression/1795/7)
 * [Kotlin Discussions - Why not multi for?](https://discuss.kotlinlang.org/t/why-not-multi-for/2241)
 * [Kotlin Discussions - Iterate over a collection and create a map](https://discuss.kotlinlang.org/t/iterate-over-a-collection-and-create-a-map/808)
