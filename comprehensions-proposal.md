@@ -92,23 +92,6 @@ private fun getContentEntry(url: VirtualFile?, rootModel: ModifiableRootModel): 
     }
 ```
 
-For simplicity, in this document we will try to rewrite the following code using different approaches.
-This code exploits monads, but this fact doesn't matter anyhow. We could operate on any collection or data type in a simillar way.
-
-```Kotlin
-val io = printIntroductionText()
-        .flatMap { retrieveWorldSizeKm() }
-        .map { worldSizeKm -> convertKmToMiles(worldSizeKm) }
-        .flatMap { worldSizeMiles ->
-          readInitialPosition(worldSizeMiles)
-            .flatMap { pos ->
-              readInitialDirection()
-                .flatMap { dir ->
-                    initState(worldSizeMiles, pos, dir)
-                }
-            }
-        }
-```
 ## Current Workarounds 
 There are some workarounds presented on the internet:
 * In many cases with nested computations there are only at most two collections involved. 
@@ -194,18 +177,6 @@ val ex = collection.filter {
     }.map {
         it * it
     }.toHashSet()
-
-```
-
-Let's imagine how our code could look like with such style:
-```kotlin
-io = for {
-    yield initState(worldSizeMiles, pos, dir)
-    for dir in readInitialDirection().flatMap()
-    for pos in readInitialPosition(worldSizeMiles).flatMap()
-    for worldSizeMiles in retrieveWorldSizeKm().map {worldSizeKm -> convertKmToMiles (worldSizeKm) }
-    for _ in printIntroductionText().flatMap()
-}
 ```
 
 
@@ -244,7 +215,7 @@ Such syntax is great for:
 * Working with complex predicates
 * Unwrapping data from different monadic types
 
-Let's rewrite our code:
+Let's rewrite some code:
 ```Kotlin
 val io =  {
             worldSizeMiles <- printIntroductionText()
@@ -254,6 +225,31 @@ val io =  {
             dir <- readInitialDirection()
           }
           yield initState(worldSizeMiles, pos, dir)
+
+// or
+
+io =      {
+            yield initState(worldSizeMiles, pos, dir)
+            for dir in readInitialDirection().flatMap()
+            for pos in readInitialPosition(worldSizeMiles).flatMap()
+            for worldSizeMiles in retrieveWorldSizeKm().map {worldSizeKm -> convertKmToMiles (worldSizeKm) }
+            for _ in printIntroductionText().flatMap()
+          }
+
+// instead of
+
+val io = printIntroductionText()
+        .flatMap { retrieveWorldSizeKm() }
+        .map { worldSizeKm -> convertKmToMiles(worldSizeKm) }
+        .flatMap { worldSizeMiles ->
+            readInitialPosition(worldSizeMiles)
+                    .flatMap { pos ->
+                        readInitialDirection()
+                                .flatMap { dir ->
+                                    initState(worldSizeMiles, pos, dir)
+                                }
+                    }
+        }
 ```
 
 ### Star-notation or Spread operator
@@ -297,8 +293,6 @@ Such syntax is great for:
 * Unwrapping monads
 * Chaining calls on one monad
 
-Due to the fact that our original code involves several monads with overlapping context, it's not that easy to rewrite it using this style.
-
 
 ### Query syntax
 See [KT-1254](https://youtrack.jetbrains.com/issue/KT-12542/Infix-Method-Chaining-C-LINQ).
@@ -327,7 +321,7 @@ IEnumerable<int> numQuery2 =
 Such syntax is great for:
 * Working with simple product transformations
 
-Our code could look somehow like this:
+Code in Kotlin could look somehow like this:
 ```kotlin
 val io = printIntroductionText()
     .SelectMany(_ => retrieveWorldSizeKm())
@@ -344,6 +338,20 @@ val io =
     from dir in readInitialDirection()
     from state in initState(worldSizeMiles, pos, dir)
     select state);
+
+// instead of
+val io = printIntroductionText()
+        .flatMap { retrieveWorldSizeKm() }
+        .map { worldSizeKm -> convertKmToMiles(worldSizeKm) }
+        .flatMap { worldSizeMiles ->
+            readInitialPosition(worldSizeMiles)
+                    .flatMap { pos ->
+                        readInitialDirection()
+                                .flatMap { dir ->
+                                    initState(worldSizeMiles, pos, dir)
+                                }
+                    }
+        }
 ```
 
 ### Pipe-forwarding
@@ -374,7 +382,7 @@ Such syntax is great for:
 * Passing data to functions from both left and right sides
 * Languages with partial evaluation
 
-While not being able to rewrite choosen code in this style, I suggest you to look at [this Gist](https://gist.github.com/vjache/5a7977fc6fb113944ae7969f567b7ead#file-pipeforward-kt) 
+[This Gist](https://gist.github.com/vjache/5a7977fc6fb113944ae7969f567b7ead#file-pipeforward-kt) 
 that shows a small test implementation for pipes-forward.
 
 It seems like the mentioned approach is not so suitable for Kotlin for [these](https://discuss.kotlinlang.org/t/pipe-forward-operator/2098/14) reasons.
@@ -480,19 +488,34 @@ It offers several constructions those allow users to write all the computation l
                   )
               }
   ```
-  Let's omit the fact that it works only on iterables and try to imagine our code with such approach:
+  Let's omit the fact that it works only on iterables and try to imagine monadic code with such approach:
   ```kotlin
-    val result = 
-            doFlatMap(
-                {
-                    printIntroductionText()
-                    .flatMap { retrieveWorldSizeKm() }
-                    .map { worldSizeKm -> convertKmToMiles(worldSizeKm) }
-                },
-                { worldSizeMiles -> readInitialPosition(worldSizeMiles)},
-                { _, _ -> readInitialDirection() },
-                {worldSizeMiles, pos, dir -> initState(worldSizeMiles, pos, dir) }
-            )
+  val io = 
+          doFlatMap(
+              {
+                  printIntroductionText()
+                  .flatMap { retrieveWorldSizeKm() }
+                  .map { worldSizeKm -> convertKmToMiles(worldSizeKm) }
+              },
+              { worldSizeMiles -> readInitialPosition(worldSizeMiles)},
+              { _, _ -> readInitialDirection() },
+              {worldSizeMiles, pos, dir -> initState(worldSizeMiles, pos, dir) }
+          )
+  
+  // instead of
+  
+  val io = printIntroductionText()
+        .flatMap { retrieveWorldSizeKm() }
+        .map { worldSizeKm -> convertKmToMiles(worldSizeKm) }
+        .flatMap { worldSizeMiles ->
+            readInitialPosition(worldSizeMiles)
+                    .flatMap { pos ->
+                        readInitialDirection()
+                                .flatMap { dir ->
+                                    initState(worldSizeMiles, pos, dir)
+                                }
+                    }
+        }
   ```
 
 * [KIO](https://github.com/colomboe/KIO) offers two ways of list comprehension:
@@ -504,6 +527,21 @@ It offers several constructions those allow users to write all the computation l
     .flatMapT { worldSizeMiles -> readInitialPosition(worldSizeMiles) }
     .flatMapT { (_, _) -> readInitialDirection() }
     .flatMap { (size, pos, dir) -> initState(size, pos, dir) }
+  
+  // instead of
+  
+  val io = printIntroductionText()
+        .flatMap { retrieveWorldSizeKm() }
+        .map { worldSizeKm -> convertKmToMiles(worldSizeKm) }
+        .flatMap { worldSizeMiles ->
+            readInitialPosition(worldSizeMiles)
+                    .flatMap { pos ->
+                        readInitialDirection()
+                                .flatMap { dir ->
+                                    initState(worldSizeMiles, pos, dir)
+                                }
+                    }
+        }
   ```
   * The second approach is way more interesting. From the documentation:
     * `+` operator is used to sequence effects when the output of the first operand is discarded;
@@ -522,6 +560,21 @@ It offers several constructions those allow users to write all the computation l
       readInitialDirection()                  to  { dir ->
       initState(worldSizeMiles, pos, dir)
     }}}}
+    
+    // instead of
+    
+    val io = printIntroductionText()
+        .flatMap { retrieveWorldSizeKm() }
+        .map { worldSizeKm -> convertKmToMiles(worldSizeKm) }
+        .flatMap { worldSizeMiles ->
+            readInitialPosition(worldSizeMiles)
+                    .flatMap { pos ->
+                        readInitialDirection()
+                                .flatMap { dir ->
+                                    initState(worldSizeMiles, pos, dir)
+                                }
+                    }
+        }
     ```
 
 * [functional-kotlin](https://github.com/alexandrepiveteau/functional-kotlin) and [funKTionale](https://github.com/MarioAriasC/funKTionale) provide almost identical methods for function composition.
