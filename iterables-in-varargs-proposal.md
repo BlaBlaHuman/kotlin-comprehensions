@@ -24,7 +24,7 @@ This is due to the fact that varargs require unnecessary overhead for a number o
     }    
     ```
 
-The spread operator creates a copy under the hood and it is a subject of many ongoing discussions (see [KT-17043 Do not create new arrays for pass-through vararg parameters](https://youtrack.jetbrains.com/issue/KT-17043)).
+The spread operator creates a copy under the hood and it is a subject of many ongoing discussions (see [KT-17043 Do not create new arrays for pass-through vararg parameters](https://youtrack.jetbrains.com/issue/KT-17043) and another [proposal](copying-in-varargs-proposal.md)).
 
 `SpreadBuilder` class that performs the elements copying of the array passed to spread operator already supports `Iterable` collections, but this is banned on the compiler's frond-end
   (see [SpreadBuilder](https://github.com/JetBrains/kotlin/blob/5e81850bb12dd095dd8d94b5c9ded043e81caf7a/libraries/stdlib/jvm/runtime/kotlin/jvm/internal/SpreadBuilder.java#L13) from the **Kotlin** repo).
