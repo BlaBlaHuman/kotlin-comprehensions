@@ -8,7 +8,7 @@
 ## Abstract
 
 Currently, **Kotlin** puts a constraint on using the *Spread operator (\*)* only on arrays.
-Moreover, the passed array's type must match the type of the `vararg` array (`Array<out T`, `IntArray`, etc.).
+Moreover, the passed array's type must match the type of the `vararg` array (`Array<out T>`, `IntArray`, etc.).
 As arrays are not widely used in **Kotlin**, this constraint leads to a lot of overhead due to the need of casts and copying.
 
 This proposal suggests allowing using the *Spread operator* on all collections, regardless of the type of the *vararg* array.
@@ -315,3 +315,47 @@ It would be more natural to use `Iterable` as the underlying type for variadic f
 However, it's not that easy, as we have to preserve the compatibility with the existing code base and **Java**.
 
 ### Keyword variadics
+
+The idea of keyword variadic arguments is a rare feature, that is present is some languages like **Python**.
+In **Python**, the keyword variadic parameter is marked with double asterisks `**` before the parameter name in the function signature.
+It allows passing a variadic number of arguments via named form and accessing them inside the function by the keyword string.
+Functions in **Python** can have both variadic positional and keyword arguments.
+However, on the call site, the positional and keyword arguments should be in the same order as they are in the function signature.
+
+Double asterisks `**` are also used as a spread operator for unwraping dictionaries on the call site.
+
+It is also important to note that inside the function, the keyword variadic parameter has a type of `dict` (the same as `Map` in **Kotlin**).
+```python
+def foo(**kwargs): # type(kwargs) == <class 'dict'>
+    for key, value in kwargs.items():
+        print(f"{key} = {value}")
+
+
+foo(a=1, b=2, c=3)
+
+dict = {"a": 1, "b": 2}
+foo(**dict)
+```
+
+The same functionality could be added to Kotlin.
+
+```kotlin
+fun foo(kvararg x: Int) { // x has type Map<String, Int>
+    x.forEach { (key, value) -> println("$key = $value") }
+}
+
+
+foo(a = 1, b = 2, c = 3)
+
+val x = "someKeyword"
+foo(*x = 1)
+```
+
+Such an approach seems easy to implement, as main ideas are similar to the ones used for positional variadic arguments:
+* The function signature is transformed to accept a single `Map` parameter
+* The argument mapping and type checking is performed
+* The `VarargLowering` stage is used to copy all the passed named arguments into one `Map` object
+
+However, there we don't have to preserve any special compatibility with **Java**, as it doesn't support named arguments.
+
+Such an approach could be beneficial in many cases, e.g. when working with CLI arguments or with key-value databases.
