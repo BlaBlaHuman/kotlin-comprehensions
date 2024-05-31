@@ -22,6 +22,7 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
     * [Desugaring to arrays](#desugaring-to-arrays)
     * [Spread operator](#spread-operator)
     * [Variadic functions in standard library](#variadic-functions-in-standard-library)
+* [Current workarounds](#current-workarounds)
 * [Technical details](#technical-details)
     * [Argument type checking](#argument-type-checking)
     * [VarargLowering stage](#vararglowering-stage)
