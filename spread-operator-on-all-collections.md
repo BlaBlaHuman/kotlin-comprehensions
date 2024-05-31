@@ -193,7 +193,19 @@ inferred type is String but Int was expected
 ```
 
 ### `VarargLowering` stage
+On the `VarargLowering` phase, a special `IrArrayBuilder` is used to add array initialization to the generated IR.
+It utilizes two additional builders:
+* `PrimitiveSpreadBuilder` --- is an interface, used for primitive arrays.
+It has a concrete implementation for every primitive type.
+* `SpreadBuilder` --- is a class used for non-primitive arrays.
 
+These helper builders expose several methods: `add`, `addSpread` and `toArray`.
+First two methods are used for adding single elements and spread arguments to the array.
+The last method is responsible for finalizing the array and returning it.
+`IrArrayBuilder` chooses the right helper builder and then generates IR calls to the constructor, `add`/`addSpread` for each argument and `toArray`.
+
+These builders were extended to support all types of spread arguments.
+In fact, `SpreadBuilder` already supported spread arguments of all types, except for primitive arrays.
 
 ## Results and performance evaluation
 
