@@ -152,6 +152,55 @@ Functions for initializing primitive arrays directly rely on the compiler to do 
 public inline fun intArrayOf(vararg elements: Int): IntArray = elements
 ```
 
+## Current workarounds
+* It is possible to use an `Iterable` collection with varargs functions, but it requires calling an explicit cast to the corresponding `Array` type and creating an additional copy:
+  ```Kotlin
+  fun printAllInt(vararg ts: Int) {
+      ts.forEach { println(it) }
+  }
+  
+  fun main() {
+      printAllInt(*listOf(1, 2, 3).toIntArray()) 
+  } 
+  ```
+
+* As for the overriding, the most obvious and simple workaround is to create a dummy method that accepts data and then calls the "real" overriden method with this data casted to array.
+  ```Kotlin
+  abstract class A<T> {
+      abstract fun foo(vararg x: T)
+  }
+  
+  class B : A<Int>() {
+      override fun foo(x: Array<out Int>) {
+          foo(*x.toIntArray())
+      }
+  
+      fun foo(vararg x: Int) {
+          x.joinToString { it.toString() }
+      }
+  }
+  ```
+
+* One of the [proposed workarounds](https://discuss.kotlinlang.org/t/scalability-issue-spread-operator-with-collections/8466) to avoid copying and to is to call a utility method in **Java** that calls the original vararg function:
+  ```Java
+  // Java
+  public class VarargUtil {
+    public static void passArrayAsVarargs(@NotNull int[] ids) {
+        MainKt.processIds(ids); // passes by reference
+    }
+  }
+  ```
+  ```kotlin
+  // Kotlin
+  fun processIds(vararg ids: Int) {
+  }
+  
+  fun main() {
+    val ids: IntArray = intArrayOf(1, 2, 3)
+    passArrayAsVarargs(ids)
+  }
+  ```
+
 
 ## Technical details
 
