@@ -32,6 +32,9 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
     * [Benchmarks](#benchmarks)
         * [Compilation](#compilation)
         * [Execution](#execution)
+* [Alternative approaches](#alternative-approaches)
+    * [Artificialy inserting needed cast in FIR](#artificialy-inserting-needed-cast-in-fir)
+    * [Using boxed arrays only](#using-boxed-arrays-only)
 * [Potential extensions](#potential-extensions)
     * [Alternative underlying collection](#alternative-underlying-collection)
     * [Keyword variadics](#keyword-variadics)
@@ -352,7 +355,7 @@ The execution benchmark was done by running `kotlinc file.kt -include-runtime -d
 
 * The average execution time for the original compiler was **5.88 * 10^(-2)** seconds
 * The prototype showed the average execution time of **5.68 * 10^(-2)** seconds (3.4% faster)
-`
+
 
 ## Prototype steps
 ✅ Rewrite typechecking pipeline
@@ -368,6 +371,31 @@ The execution benchmark was done by running `kotlinc file.kt -include-runtime -d
 ❌ Rewrite typechecking pipeline used for diagnostics
 
 ❌ Add type checking tests
+
+## Alternative approaches
+
+### Artificialy inserting needed cast in FIR
+
+One of the implemented approaches was the idea of artificially adding calls to required cast functions in the FIR.
+It consists of the following steps:
+1. The typechecking is also done just by the element type
+2. After the suitable candidate function is found for each call, all spread arguments on the call site are wrapped into an artificial cast to the required array
+
+Such an approach takes the responsibility of calling casts off the user. 
+However, it just hides the underlying problem and doesn't solve it. 
+
+### Using boxed arrays only
+
+There is a `TypeResolveTransformer` that is responsible for transforming types of FIR nodes.
+It is also used for transforming the type of `vararg` parameters to the corresponding array type.
+For this purpose, it uses a special utility function `createArrayType` that accepts a type and returns an array type with elements of the original type.
+This function has an interesting boolean parameter `createPrimitiveArrayTypeIfPossible`, which is set to `true` by default.
+If this flag is set to `false`, all the `vararg` parameters will use the boxed array type, regardless of whether the element type is primitive or not.
+
+This approach helps to get rid of any type incompatibility issues. 
+However, there are several drawbacks:
+1. Boxed arrays introduce significantly more overhead compared to primitive arrays
+2. It totally breaks the backward compatibility with the existing code base
 
 ## Potential extensions
 
