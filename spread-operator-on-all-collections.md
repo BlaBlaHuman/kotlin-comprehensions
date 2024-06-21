@@ -169,7 +169,7 @@ public inline fun intArrayOf(vararg elements: Int): IntArray = elements
   } 
   ```
 
-* As for the overriding, the most obvious and simple workaround is to create a dummy method that accepts data and then calls the "real" overriden method with this data casted to array.
+* As for the overriding, the most obvious and simple workaround is to create an overriding method that accepts boxed array data and then calls the real variadic method with this data casted to primitive array.
   ```Kotlin
   abstract class A<T> {
       abstract fun foo(vararg x: T)
@@ -379,7 +379,7 @@ The execution benchmark was done by running `kotlinc file.kt -include-runtime -d
 
 One of the implemented approaches was the idea of artificially adding calls to required cast functions in the FIR.
 It consists of the following steps:
-1. The typechecking is also done just by the element type
+1. The typechecking is also done just by the element types
 2. After the suitable candidate function is found for each call, all spread arguments on the call site are wrapped into an artificial cast to the required array
 
 Such an approach takes the responsibility of calling casts off the user. 
