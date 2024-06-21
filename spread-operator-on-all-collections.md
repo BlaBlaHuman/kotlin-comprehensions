@@ -7,11 +7,12 @@
 
 ## Abstract
 
-Currently, **Kotlin** puts a constraint on using the *Spread operator (\*)* only on arrays.
+Currently, in **Kotlin** the usage of *Spread operator (\*)* is limited to array types.
 Moreover, the passed array's type must match the type of the `vararg` array (`Array<out T>`, `IntArray`, etc.).
 As arrays are not widely used in **Kotlin**, this constraint leads to a lot of overhead due to the need of casts and copying.
 
 This proposal suggests allowing using the *Spread operator* on all collections, regardless of the type of the *vararg* array.
+
 
 ## Table of contents
 
@@ -43,7 +44,7 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
 
 ### Variadic functions
 *Kotlin* provides a special syntax for creating functions with variadic number of arguments.
-It is possible to create a variadic parameter by using the `vararg` keyword in the function signature right before this parameter.
+It is possible to create a variadic parameter by using the `vararg` keyword in the function signature right before this parameter's type.
 
 ```Kotlin
 fun printElements(vararg elements: Int) {
@@ -59,7 +60,7 @@ The only constraint on the variadic function signature is that there can be only
 
 ### Desugaring to arrays
 
-All the variadic parameters are desugared to arrays in the compiled code, which contain all the passed arguments.
+All the variadic parameters are desugared to arrays, which contain all the passed arguments.
 The type of the array depends on the type of the variadic parameter (see the [Kotlin Specification](https://kotlinlang.org/spec/declarations.html#variable-length-parameters)).
 
 * Parameters of primitive types are desugared to primitive arrays (e.g. `Int` parameter is converted to `IntArray`)
@@ -88,7 +89,7 @@ class B : A<Int> {
 
 ### Spread operator
 
-The *spread operator (\*)* is a special operator that allows unwrapping existing collections on the call site and passing the collection elements to variadic functions.
+The *spread operator (\*)* is a special operator that allows unwrapping existing collections on the call site and passing the elements from these collections to variadic functions.
 
 ```Kotlin
 fun printElements(vararg elements: Int) {
@@ -143,7 +144,7 @@ Using **Sourcegraph**, it was found out that:
 
 ### Variadic functions in standard library
 
-Variadic functions a particularly interesting, as they are actively utilized by the **Kotlin** standart library.
+Variadic functions a particularly interesting, as they are actively utilized by the **Kotlin** standard library.
 They are mainly used for instantiating collections:
 ```kotlin
 public fun <T> listOf(vararg elements: T): List<T> =
