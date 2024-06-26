@@ -369,7 +369,7 @@ The execution benchmark was done by running `kotlinc file.kt -include-runtime -d
 
 ✅ Add function resolution tests
 
-❌ Rewrite typechecking pipeline used for diagnostics
+✅ Rewrite typechecking pipeline used for diagnostics
 
 ❌ Add type checking tests
 
