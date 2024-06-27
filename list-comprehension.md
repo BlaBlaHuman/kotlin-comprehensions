@@ -456,10 +456,20 @@ Such a syntax is perfect for two approaches:
 
 Let's consider each of them:
 * Set-builder notation:
+  
+  Several syntax constructions could be used to implement the set-builder notation.
+  
+  Python-like version:
   ```kotlin
   val list = List [a to b for a in Collection1 for b in Collection2 if Condition]
   ```
-  Could be desugared to:
+  Haskell-like version:
+  ```kotlin
+  val list = List [x to y | x <- list1,
+                            y <- list2,
+                            Condition]
+  ```
+  Both versions could be desugared to:
   ```kotlin
   val list = Collection1.flatMap { a -> Collection2.map { b -> a to b } }.filter { (a, b) -> Condition }
   ```
