@@ -24,9 +24,13 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
     * [Spread operator](#spread-operator)
     * [Variadic functions in standard library](#variadic-functions-in-standard-library)
 * [Current workarounds](#current-workarounds)
-* [Technical details](#technical-details)
+* [Current implementation](#current-implementation)
+    * [Variadic function signature transformation](#variadic-function-signature-transformation)
+    * [Function call candidates gathering](#function-call-candidates-gathering)
+    * [Vararg lowering phase](#vararglowering-stage)
+* [Proposed implementation](#proposed-implementation)
     * [Argument type checking](#argument-type-checking)
-    * [VarargLowering stage](#vararglowering-stage)
+    * [`VarargLowering` stage](#vararglowering-stage-1)
 * [Prototype steps](#prototype-steps)
 * [Results and performance evaluation](#results-and-performance-evaluation)
     * [Results](#results)
@@ -70,6 +74,16 @@ The need for primitive types is motivated by the performance reasons.
 When targeting `JVM` platform, primitive arrays avoid wrapping and unwrapping of primitive types (`IntArray` in **Kotlin** is turned into `int[]` in **Java**).
 If we were to use boxed arrays with primitve types, these types would be wrapped into primitive wrappers (`Integer`, `Boolean`, etc., see the [**Java** documentation](https://docs.oracle.com/javase/tutorial/java/data/autoboxing.html)).
 This means that, for example, `Array<out Int>` in **Kotlin** is turned into `Integer[]` in **Java**, which introduces unnecessary overhead.
+
+There are 8 types of primitive arrays in **Kotlin**:
+  * `IntArray`
+  * `BooleanArray`
+  * `ByteArray`
+  * `CharArray`
+  * `DoubleArray`
+  * `FloatArray`
+  * `LongArray`
+  * `ShortArray`
 
 This approach already implies some limitations. 
 For example, it is impossible to override a generic variadic method using primitive type ([KT-9495](https://youtrack.jetbrains.com/issue/KT-9495)). 
@@ -207,50 +221,32 @@ public inline fun intArrayOf(vararg elements: Int): IntArray = elements
   ```
 
 
-## Technical details
+## Current implementation
 
 The whole current implementation can be split into three major steps:
-1. **Variadic function signature transformation** ---
+
+### Variadic function signature transformation
 On this step, the original type of `vararg` parameter is replaced with the corresponding array type.
 It is done using `FirTypeResolveTransformer` on the `TYPES` resolution phase.
 
-2. **Function call candidates gathering** ---
-This step done on `BODY_RESOLVE` phase for each function call.
+### Function call candidates gathering
+This step is done on `BODY_RESOLVE` phase for each function call.
 For each potential candidate, several checks are performed.
 One of these checks is argument type checking, which is done using `CheckArguments` checker stage.
 It compares the type of variadic arguments against the type of the `vararg` parameter (for single elements) or the type of `vararg` array (for spread arguments).
 
-3. **Vararg lowering phase** ---
+### `VarargLowering` stage
 On the backend part, several lowering phases are executed, which desugar higher order concepts.
 On `VarargLowering` phase, all the passed variadic arguments are copied into one unified array on the call site.
-After that, the `vararg` parameter is finally desugared to a regular array parameter. 
+For this purpose, a special `IrArrayBuilder` is used to add array initialization to the generated IR.
 
+In cases with non-spread arguments only, the compiler just initializes the array of the required size and copies all the passed arguments using `set`.
 
+When there is only one argument, which is spread, the compiler copies the passed array using `Array.copyOf` or `System.arraycopy`.
 
-### Argument type checking
-Currently, all the spread arguments' types are checked against the type of the `vararg` array.
-However, this is the main source of all the issues. 
-Moreover, it provides a strange and inconvenient message:
-```
-Type mismatch:
-inferred type is List<Int> but IntArray was expected
-```
-
-The prototype resolves this problem by type checking spread arguments only by the type of their elements.
-This was done by introducing several special utilitiy functions.
-These functions are able to unwrap any array type and all `Iterable` collections.
-
-Type incompatibility errors are now more informative and clear:
-```
-Type mismatch:
-inferred type is String but Int was expected
-```
-
-### `VarargLowering` stage
-On the `VarargLowering` phase, a special `IrArrayBuilder` is used to add array initialization to the generated IR.
-It utilizes two additional builders:
+In cases of multiple arguments with at least one being spread, `IrArrayBuilder` utilizes two additional builders:
 * `PrimitiveSpreadBuilder` --- is an interface, used for primitive arrays.
-It has a concrete implementation for every primitive type.
+  It has a concrete implementation for every primitive type.
 * `SpreadBuilder` --- is a class used for non-primitive arrays.
 
 These helper builders expose several methods: `add`, `addSpread` and `toArray`.
@@ -258,9 +254,46 @@ First two methods are used for adding single elements and spread arguments to th
 The last method is responsible for finalizing the array and returning it.
 `IrArrayBuilder` chooses the right helper builder and then generates IR calls to the constructor, `add`/`addSpread` for each argument and `toArray`.
 
+After that, the `vararg` parameter is finally desugared to a regular array parameter. 
+
+
+## Proposed implementation
+We have to modify the last two steps ([Function call candidates gathering](#function-call-candidates-gathering) and [Vararg lowering phase](#vararglowering-stage)) in order to achieve the desired functionality.
+
+### Argument type checking
+Currently, when gathering candidates for a function call, all the spread arguments' types are checked against the type of the `vararg` array.
+However, this is the main source of all the issues. 
+Moreover, it provides a strange and inconvenient type incompatibility message:
+```kotlin
+fun foo(vararg x: Int) {}
+
+foo(*listOf("Hello"))
+// Type mismatch:
+// inferred type is List<String> but IntArray was expected
+```
+
+The prototype resolves this problem by type checking spread arguments only by the type of their elements.
+This was done by introducing several special utilitiy functions.
+These functions are able to unwrap any array, `CharSequence` and `Iterable` type.
+
+Type incompatibility errors are now more informative and clear:
+```kotlin
+fun foo(vararg x: Int) {}
+
+foo(*listOf("Hello"))
+// Type mismatch:
+// inferred type is String but Int was expected
+```
+
+### `VarargLowering` stage
+
 These builders were extended to support all types of spread arguments.
 In fact, `SpreadBuilder` already supported spread arguments of all types, except for primitive arrays.
 
+However, there is one more case that needs to be handled.
+When there is only one argument, which is spread, the compiler will try to call `copy` method on it.
+But if the spread argument is not an array, this will lead to a type cast error.
+To avoid this, for all cases with single non-array spread arguments, the compiler will just use the same strategy as for multiple mixed arguments (using additional builders).
 ## Results and performance evaluation
 
 ### Results
