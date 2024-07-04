@@ -48,6 +48,7 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
 * [Potential extensions](#potential-extensions)
     * [Alternative underlying collection](#alternative-underlying-collection)
     * [Keyword variadics](#keyword-variadics)
+* [Related discussions](#related-discussions)
 
 ## Background and motivation
 
@@ -727,3 +728,25 @@ Such an approach seems easy to implement, as main ideas are similar to the ones 
 However, there we don't have to preserve any special compatibility with **Java**, as it doesn't support named arguments.
 
 Such an approach could be beneficial in many cases, e.g. when working with CLI arguments or with key-value databases.
+
+## Related discussions
+* [KT-2462](https://youtrack.jetbrains.com/issue/KT-2462) Varargs
+* [KT-12663](https://youtrack.jetbrains.com/issue/KT-12663) Spread (*) operator for Iterable (Collection?) in varargs
+* [KT-6846](https://youtrack.jetbrains.com/issue/KT-6846) Spread operator doesn't work for boxed arrays (e.g. Array)
+* [KT-25350](https://youtrack.jetbrains.com/issue/KT-25350) Scalability Issue when combining collections and vararg function / spread operator
+* [KT-9471](https://youtrack.jetbrains.com/issue/KT-9471) Spread operator should be able to mix IntArray and Array
+* [KT-9495](https://youtrack.jetbrains.com/issue/KT-9495) vararg and substitution of primitives for type parameters&
+* [KT-27013](https://youtrack.jetbrains.com/issue/KT-27013) Spread operator doesn't work on primitive type vararg parameters
+* [KT-47711](https://youtrack.jetbrains.com/issue/KT-47711) Type mismatch when unpacking IntArray and re-packing to Array
+* [KT-19840](https://youtrack.jetbrains.com/issue/KT-19840) Spread operator doesn't work for non-primitive arrays
+* [KT-26146](https://youtrack.jetbrains.com/issue/KT-26146) Unable to override generic function with "primitive" vararg type parameter
+* [KT-30837](https://youtrack.jetbrains.com/issue/KT-30837) Confusing error message for passing a list/collection to `spread` operator
+* [KT-64324](https://youtrack.jetbrains.com/issue/KT-64324) Enum entries should be spreadable
+* [KT-27013](https://youtrack.jetbrains.com/issue/KT-27013/Spread-operator-doesnt-work-on-primitive-type-vararg-parameters) Spread operator doesn't work on primitive type vararg parameters
+* [KT-17043](https://youtrack.jetbrains.com/issue/KT-17043) Do not create new arrays for pass-through vararg parameters
+* [KT-27538](https://youtrack.jetbrains.com/issue/KT-27538) Avoid Arrays.copyOf when inlining a function call with vararg
+* [KT-32474](https://youtrack.jetbrains.com/issue/KT-32474) Prevent empty array allocation when vararg is called without arguments
+* [KT-9429](https://youtrack.jetbrains.com/issue/KT-9429) Change 'vararg' semantics to always copy
+* [KT-22405](https://youtrack.jetbrains.com/issue/KT-22405) Extra array copies created on calling "string".format()
+* [Kotlin-Discussions](https://discuss.kotlinlang.org/t/scalability-issue-spread-operator-with-collections/8466) Scalability Issue: Spread operator with collections
+* [StackOverflow](https://www.reddit.com/r/Kotlin/comments/9gkfdv/question_regarding_spread_operator_and_varargs/) Question regarding spread operator and varargs
