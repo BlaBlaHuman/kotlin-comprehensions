@@ -300,6 +300,14 @@ dict = {"a": 1, "b": 2}
 foo(0, *list, 3, **dict, c = 3)
 ```
 
+The presence of two types of variadic parameters is quite convenient for writing function wrappers:
+```python
+def decorator(old):
+    def new(*args, **kwargs):
+        # ...
+        return old(*args, **kwargs)
+    return new
+```
 
 ### Java
 
