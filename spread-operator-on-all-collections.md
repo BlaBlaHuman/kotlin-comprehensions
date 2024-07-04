@@ -340,6 +340,55 @@ public class Main {
 In such cases, arrays are passed by reference, just like any other normal argument.
 Inside the function, all the elements are accessed using the vararg parameter, which has an array type with elements being of the type of the variadic parameter.
 
+Unfortunately, as **Java** only allows functions to have variadic parameter only in the last position, it is sometimes impossible to 
+
+The following code works just fine:
+```Java
+// SomeClass.java
+
+public class SomeClass {
+    public static void main(String[] args) {
+        MainKt.bar(1, "hello", "world"); // Compiles and runs
+    }
+}
+```
+
+```kotlin
+// Main.kt
+
+fun bar(x: Int, vararg args: String) {
+    args.forEach {
+        println(it)
+    }
+}
+```
+
+However, if the variadic parameter in the **Kotlin** function signature is not on the last position, the **Java** code will not compile with single variadic arguments:
+
+```Java
+// SomeClass.java
+
+public class SomeClass {
+    public static void main(String[] args) {
+        MainKt.bar("hello", "world", 1); // Compilation error 
+      
+        String[] arr = new String[] {"hello", "world"};
+        MainKt.bar(arr, 1); // Compiles and runs
+    }
+}
+```
+
+```kotlin
+// Main.kt
+
+fun bar(vararg args: String, x: Int) {
+    args.forEach {
+        println(it)
+    }
+}
+```
+
+
 ## Current workarounds
 * It is possible to use an `Iterable` collection with varargs functions, but it requires calling an explicit cast to the corresponding `Array` type and creating an additional copy:
   ```Kotlin
