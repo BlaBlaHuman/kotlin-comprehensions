@@ -23,6 +23,10 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
     * [Desugaring to arrays](#desugaring-to-arrays)
     * [Spread operator](#spread-operator)
     * [Variadic functions in standard library](#variadic-functions-in-standard-library)
+* [Variadic functions in other programming languages](#variadic-functions-in-other-programming-languages)
+    * [C](#c)
+    * [Python](#python)
+    * [Java](#java)
 * [Current workarounds](#current-workarounds)
 * [Current implementation](#current-implementation)
     * [Variadic function signature transformation](#variadic-function-signature-transformation)
@@ -37,6 +41,7 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
     * [Benchmarks](#benchmarks)
         * [Compilation](#compilation)
         * [Execution](#execution)
+    * [Notes on interop with Java](#notes-on-interop-with-java)
 * [Alternative approaches](#alternative-approaches)
     * [Artificialy inserting needed cast in FIR](#artificialy-inserting-needed-cast-in-fir)
     * [Using boxed arrays only](#using-boxed-arrays-only)
@@ -170,6 +175,170 @@ Functions for initializing primitive arrays directly rely on the compiler to do 
 ```kotlin
 public inline fun intArrayOf(vararg elements: Int): IntArray = elements
 ```
+
+## Variadic functions in other programming languages
+
+Early languages didn't formally introduce the concept of variadic functions and sometimes didn't require any function declarations in advance. 
+The example of such a language is **B**, the predecessor of **C** (see the [B documentation](https://www.thinkage.ca/gcos/expl/b/manu/manu.html#Section4_3)). 
+Since the function call has no information about the number of arguments, it allows passing a variable number of parameters.
+Inside the function, one can use a special function `nargs()` that returns the number of passed arguments to the function. 
+It's needed to fill in default values for the parameters that were not initialized.
+Otherwise, if the number of passed arguments is greater than the number of parameters, all the surplus arguments are discarded.
+
+In modern languages that don't have a dedicated mechanism for variadic functions, variadic behaviour could be mimicked by overloading a function for each required number of arguments.
+It requires building a call chain from functions with fewer parameters towards the main function of maximum arity, containing all the required logic.
+
+```kotlin
+fun sum(x1: Int): Int = sum(x1, 0)
+
+fun sum(x1: Int, x2: Int): Int = sum(x1, x2, 0)
+
+fun sum(x1: Int, x2: Int, x3: Int): Int = x1 + x2 + x3
+```
+
+However, this approach is not really scalable and efficient, as it contains a lot of boilerplate code and its usage is limited to the maximum number of parameters for which the user has implemented the call chain.
+So the concept of variadic functions started to become a widely used native feature in many programming languages. 
+
+### C
+**C** is a classical compiled low-level programming language.
+It has one of the first and most known appearances of variadic functions, which is [`printf`](https://cplusplus.com/reference/cstdio/printf/) function that takes a formatting string and arbitrary number of arguments and then prints the arguments according to the formatting string. 
+
+Variadic functions in **C** are marked with three dots (`...`) in the parameter list right after the last named parameter.
+One can access variadic arguments inside the function using several special types and macros (see [doc](https://cplusplus.com/reference/cstdarg/)) based on the pointer arithmetic.
+However, as there is no way to calculate the number of passed arguments, a dedicated parameter for this purpose is needed.
+In the case of `printf` function, the number of arguments expected is derived from the format string itself.
+
+```C
+#include <stdarg.h>
+#include <stdio.h>
+
+double sum(int count, ...) {
+    va_list ap;
+    int j;
+    double sum = 0;
+
+    va_start(ap, count); 
+    for (j = 0; j < count; j++) {
+        sum += va_arg(ap, int); 
+    }
+    va_end(ap);
+
+    return sum;
+}
+
+int main() {
+    printf("%f\n", sum(3, 1, 2, 3));
+    return 0;
+}
+```
+
+`va_list` is a dedicated type definition for the type that holds all the required information regarding the variadic parameter of the current function. 
+The usage of variadic parameters is based on several function macros: 
+
+* `va_start(list, par)` --- takes a `va_list` object and a reference to the function's last parameter.
+In the latest language standard, the second parameter is no longer required.
+It initialises the `va_list` object for use by `va_arg` or `va_copy`
+* `va_arg(list, type)` --- takes two parameters, a `va_list` object and a type descriptor.
+It expands to the next variable argument, and has the specified type.
+Successive invocations of `va_arg` allow processing each of the variable arguments in turn.
+Unspecified behavior occurs if the type is incorrect or there is no next variable argument.
+* `va_end(list)` --- takes one parameter, a `va_list` object, and resets it.
+For example, to scan the variable arguments multiple times, the programmer would need to re-initialize the `va_list` object by calling `va_end` and then `va_start` again on it.
+* `va_copy(list1, list2)` --- takes two parameters, both of them `va_list` objects.
+It clones the second (which must have been initialised) into the first.
+
+However, the `printf` function was considered dangerous by many experts for its vulnerability called [format string attack](https://cs155.stanford.edu/papers/formatstring-1.2.pdf).
+After the invocation, the function puts all the elements on the stack and parses the format string and searches for `%_` specifiers in the string to embed arguments.
+Then it pops the element from the stack and prints it.
+However, many developers made a mistake by writing `printf(buffer)` instead of `printf("\%s", buffer)` in order to print the `buffer` string.
+In this case, `printf` considers the passed string as a format string.
+If it contains an element embedding `%_` it tries to pop an element from the stack, which is not presented, so it pops further.
+This hack allows attackers to access the program stack and change the stored data. 
+
+
+### Python
+**Python** is one of the most popular languages nowadays.
+It's a high-level general-purpose interpreted language. 
+It has two options for variadic parameters:
+
+* Non-keyword variadic parameters.
+These are marked with an *asterisk (\*)* before the parameter name in the function declaration.
+Inside the function, users can access the passed arguments via the variadic parameter name.
+The type of the parameter is tuple.
+  ```python
+  def foo(*args): # type(args) == <class 'tuple'>
+    for element in args:
+      print(element, end='')
+  
+  foo(1, 2, 3) # prints 123
+  ```
+* Keyword variadic parameters.
+Such parameters are marked with double *asterisk (\*\*)*. It allows passing named arguments to the function.
+The type of such a parameter inside the function is a dictionary
+  ```python
+  def foo(**kwargs): # type(kwargs) == <class 'dict'>
+    print(kwargs["a"]) // hello
+    print(kwargs["b"]) // 1
+    
+  foo(a = "hello", b = 1)
+  ```
+  
+Two mentioned approaches can be used together.
+But named and non-named arguments have to be in the same order as the parameters defined in the function signature.
+
+**Python** also provides a way to pass existing collections to these parameters.
+To unpack a collection to a non-named parameter, a single *asterisk (\*)* is used. 
+For named arguments, the *double asterisks (\*\*)* operator is used.
+```python
+def foo(*args, **kwargs):
+    print(args) # (0, 1, 2, 3)
+    print(kwargs) # {'a': 1, 'b': 2, 'c': 3}
+
+list = [1, 2]
+dict = {"a": 1, "b": 2}
+foo(0, *list, 3, **dict, c = 3)
+```
+
+
+### Java
+
+In **Java**, each function can have at most one variadic parameter, and it has to be in the last position in the function signature.
+Such a parameter is marked with *triple dots (...)* after the parameter type.
+
+```Java
+public class Main {
+  public static void printAll(int... things){
+     for(Object i:things){
+        System.out.print(i);
+     }
+  }
+  
+  public static void main(String[] args) {
+    printAll(1, 2, 3); // prints 123
+  }
+}
+```
+
+It is also possible to pass elements of an existing array to the variadic parameters.
+However, this can only be done for one array per call without the possibility for any other arguments to be passed.
+
+```Java
+public class Main {
+  public static void printAll(int... things){
+     for(Object i:things){
+        System.out.print(i);
+     }
+  }
+
+  public static void main(String[] args) {
+    int[] arr = {1,2,3};
+    printAll(arr); // prints 123
+  }
+}
+```
+
+In such cases, arrays are passed by reference, just like any other normal argument.
+Inside the function, all the elements are accessed using the vararg parameter, which has an array type with elements being of the type of the variadic parameter.
 
 ## Current workarounds
 * It is possible to use an `Iterable` collection with varargs functions, but it requires calling an explicit cast to the corresponding `Array` type and creating an additional copy:
@@ -390,6 +559,8 @@ The execution benchmark was done by running `kotlinc file.kt -include-runtime -d
 * The average execution time for the original compiler was **5.88 * 10^(-2)** seconds
 * The prototype showed the average execution time of **5.68 * 10^(-2)** seconds (3.4% faster)
 
+### Notes on interop with Java
+It's important to note that the prototype doesn't break the compatibility with **Java**, as most of the changes only touched the compiler's frontend.
 
 ## Prototype steps
 ✅ Rewrite typechecking pipeline
