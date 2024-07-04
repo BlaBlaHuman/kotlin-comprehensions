@@ -423,8 +423,7 @@ First two methods are used for adding single elements and spread arguments to th
 The last method is responsible for finalizing the array and returning it.
 `IrArrayBuilder` chooses the right helper builder and then generates IR calls to the constructor, `add`/`addSpread` for each argument and `toArray`.
 
-After that, the `vararg` parameter is finally desugared to a regular array parameter. 
-
+After that, the `vararg` parameter is finally desugared to a regular array parameter.
 
 ## Proposed implementation
 We have to modify the last two steps ([Function call candidates gathering](#function-call-candidates-gathering) and [Vararg lowering phase](#vararglowering-stage)) in order to achieve the desired functionality.
@@ -561,6 +560,31 @@ The execution benchmark was done by running `kotlinc file.kt -include-runtime -d
 
 ### Notes on interop with Java
 It's important to note that the prototype doesn't break the compatibility with **Java**, as most of the changes only touched the compiler's frontend.
+
+However, the prototype now also allows to pass `Iterable` collections to variadic functions from **Java**:
+
+```Java
+// VarargUtil.java
+
+public class VarargUtil {
+    public static void printVararg(String... args) {
+        for (String arg : args) {
+            System.out.println(arg);
+        }
+    }
+}
+```
+
+```Kotlin
+// Main.kt
+
+import VarargUtil.printVararg
+
+fun main() {
+    val mutableSet = mutableSetOf("a", "b", "c")
+    printVararg(*mutableSet) // Compiles and runs successfully
+}
+```
 
 ## Prototype steps
 ✅ Rewrite typechecking pipeline
