@@ -26,6 +26,7 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
 * [Variadic functions in other programming languages](#variadic-functions-in-other-programming-languages)
     * [C](#c)
     * [Python](#python)
+    * [JavaScript](#javascript)
     * [Java](#java)
 * [Current workarounds](#current-workarounds)
 * [Current implementation](#current-implementation)
@@ -308,6 +309,59 @@ def decorator(old):
         return old(*args, **kwargs)
     return new
 ```
+
+### JavaScript
+
+In **JavaScript** variadic parameters are called [*rest* parameters](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters).
+Such a parameter can be only one in the function signature and must be on the last position.
+Rest parameters are marked with three dots `...` right before the name of the parameter.
+These parameters are desugared to arrays containing all the passed arguments.
+
+```javascript
+function sortRestArgs(param1, param2, ...theArgs) {
+  const sortedArgs = theArgs.sort();
+  return sortedArgs;
+}
+```
+
+**JavaScript** additionally provides a [spread operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax) that is also marked with three dots `...` before the collection.
+This operator is somewhat different from similar operators in other languages.
+This operator is placed in front of an iterable collection and allows unpacking its elements in three cases:
+* On functions call site `myFunction(a, ...iterableObj, b)`
+* In array literals `[1, ...iterableObj, '4', 'five', 6]`
+* In object literals `{ ...obj, key: 'value' }`
+
+The spread operator provides more handy and flexible ways to work with collections in general.
+
+For example, the array concatenation can be done without calling `Array.prototype.concat()` function:
+```javascript
+let arr1 = [0, 1, 2];
+const arr2 = [3, 4, 5];
+
+arr1 = [...arr1, ...arr2];
+// Instead of
+arr1 = arr1.concat(arr2);
+```
+
+It is also possible to conditionally add values to arrays:
+```javascript
+const isSummer = false;
+const fruits = ["apple", "banana", ...(isSummer ? ["watermelon"] : [])];
+// ['apple', 'banana']
+```
+
+Spread elements can be mixed with other spread and non-spread elements in all three cases.
+
+```javascript
+function foo(...theArgs) {
+  ..
+}
+
+const arr1 = [1, 2, 3];
+const arr2 = [4, 5, 6];
+foo(...arr1, ...arr2, 7, 8, 9);
+```
+
 
 ### Java
 
