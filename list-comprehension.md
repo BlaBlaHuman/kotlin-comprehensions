@@ -204,7 +204,7 @@ Such syntax is great for:
 
 ### Query syntax
 
-See [KT-1254](https://youtrack.jetbrains.com/issue/KT-12542/Infix-Method-Chaining-C-LINQ).
+See [KT-1254](https://youtrack.jetbrains.com/issue/KT-12542/Infix-Method-Chaining-C-LINQ) and [Feature request: Something like C#’s LINQ](https://discuss.kotlinlang.org/t/feature-request-something-like-c-s-linq/20069/5).
 
 *Query syntax* is a very rare mechanism, which syntax looks like a database query. 
 From all the mainstream languages, *C#* seems like the only one that has this kind of construction (see [LINQ](https://learn.microsoft.com/en-us/dotnet/csharp/linq/)). 
@@ -226,9 +226,11 @@ IEnumerable<int> numQuery2 =
     .OrderBy(n => n);
 ```
 [Here](https://learn.microsoft.com/en-us/dotnet/csharp/linq/standard-query-operators/#query-expression-syntax-table) all the supported operations are listed.
+The LINQ mechanism in **C#** is mainly based on [expression trees](https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/expression-trees/), which can represent different queries and can be translated to concrete representation based on a target (SQL databases, collections, etc).
 
 Such syntax is great for:
 * Working with simple product transformations
+* Applying queries to different data sources
 
 However, such syntax is completely not in **Kotlin** language style.
 
