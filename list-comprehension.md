@@ -23,6 +23,8 @@ It's vital to research the existing solutions from other programming languages a
   * [Query syntax](#query-syntax)
   * [Pipe-forwarding](#pipe-forwarding)
 * [Library Solutions](#library-solutions)
+  * [Komprehensions](#komprehensions)
+  * [KIO](#kio)
 * [Collection literals in Kotlin](#collection-literals-in-kotlin)
 * [List of Discussions](#list-of-discussions)
 * [Additional Resoures](#additional-resoures)
@@ -264,10 +266,11 @@ Such syntax is great for:
 * Languages with partial evaluation
 
 This approach is not suitable for **Kotlin**, as the language doesn't support partial application.
-
+However, [arrow-kt library provides tools](https://arrow-kt.io/learn/collections-functions/utils/) for partial application and currying.
 ## Library Solutions
 
-* [Komprehensions](https://github.com/pakoito/Komprehensions) is one of the most starred solution for this problem on *GitHub*.
+### [Komprehensions](https://github.com/pakoito/Komprehensions)
+**Komprehensions** is one of the most starred solution for this problem on *GitHub*.
 It offers several constructions those allow users to write all the computation lambdas on the same level and have access to the results of previous computation blocks:
     ```Kotlin
     /**
@@ -367,7 +370,8 @@ It offers several constructions those allow users to write all the computation l
               }
   ```
 
-* [KIO](https://github.com/colomboe/KIO) offers two ways of list comprehension:
+### [KIO](https://github.com/colomboe/KIO)
+**KIO** offers two ways of list comprehension:
   * The first one is simillar to the one used in `Komprehensions`. It utilizes `mapT` and `flatMapT`, those get the result from the argument function and put it in a tuple with the provided input parameter:
   ```Kotlin
   val io = printIntroductionText()
@@ -407,7 +411,7 @@ It offers several constructions those allow users to write all the computation l
     initState(worldSizeMiles, pos, dir)
   }}}}
   ```
-    See the [blog-post](https://www.msec.it/blog/comprehension-like-syntax-in-kotlin/) from the author.
+  See the [blog-post](https://www.msec.it/blog/comprehension-like-syntax-in-kotlin/) from the author.
   Unfortunately, no usages of this library were found.
 
 
