@@ -25,6 +25,8 @@ It's vital to research the existing solutions from other programming languages a
 * [Library Solutions](#library-solutions)
   * [Komprehensions](#komprehensions)
   * [KIO](#kio)
+  * [functional-kotlin and funKTionale](#functional-kotlin-and-funktionale)
+  * [kotlin-monads](#kotlin-monads)
 * [Collection literals in Kotlin](#collection-literals-in-kotlin)
 * [List of Discussions](#list-of-discussions)
 * [Additional Resoures](#additional-resoures)
@@ -415,7 +417,8 @@ It offers several constructions those allow users to write all the computation l
   Unfortunately, no usages of this library were found.
 
 
-* [functional-kotlin](https://github.com/alexandrepiveteau/functional-kotlin) and [funKTionale](https://github.com/MarioAriasC/funKTionale) provide almost identical methods for function composition.
+### [functional-kotlin](https://github.com/alexandrepiveteau/functional-kotlin) and [funKTionale](https://github.com/MarioAriasC/funKTionale)
+They provide almost identical methods for function composition.
 The idea is very simillar to [forward and backward composition](#pipe-forwarding). Let's consider [functional-kotlin](https://github.com/alexandrepiveteau/functional-kotlin):
   * `f..g == f g`
   * `f.andThen(g) == g..f == g f`
@@ -424,7 +427,8 @@ The idea is very simillar to [forward and backward composition](#pipe-forwarding
   
   Unfortunately, no usages were found.
 
-* [kotlin-monads](https://github.com/h0tk3y/kotlin-monads) offers *do-notation* and *list-monad* based on *Kotlin-coroutines*:
+### [kotlin-monads](https://github.com/h0tk3y/kotlin-monads)
+It offers *do-notation* and *list-monad* based on *Kotlin-coroutines*:
   ```kotlin
   val m = doReturning(MonadListReturn) {
       val x = bind(monadListOf(1, 2, 3))
