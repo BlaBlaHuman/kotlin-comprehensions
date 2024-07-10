@@ -27,6 +27,7 @@ It's vital to research the existing solutions from other programming languages a
   * [KIO](#kio)
   * [functional-kotlin and funKTionale](#functional-kotlin-and-funktionale)
   * [kotlin-monads](#kotlin-monads)
+  * [Arrow-kt](#arrow-kt)
 * [Collection literals in Kotlin](#collection-literals-in-kotlin)
 * [List of Discussions](#list-of-discussions)
 * [Additional Resoures](#additional-resoures)
@@ -268,7 +269,7 @@ Such syntax is great for:
 * Languages with partial evaluation
 
 This approach is not suitable for **Kotlin**, as the language doesn't support partial application.
-However, [arrow-kt library provides tools](https://arrow-kt.io/learn/collections-functions/utils/) for partial application and currying.
+However, [arrow-kt](#arrow-kt) library provides [tools](https://arrow-kt.io/learn/collections-functions/utils/) for partial application and currying.
 ## Library Solutions
 
 ### [Komprehensions](https://github.com/pakoito/Komprehensions)
@@ -450,6 +451,88 @@ It offers *do-notation* and *list-monad* based on *Kotlin-coroutines*:
   assertEquals(monadListOf(1, 1, 2, 2, 2, 4, 3, 6, 3, 9, 4, 12), m)
   ```
 
+### [Arrow-kt](https://arrow-kt.io/)
+Is a well-known library that brings a number of function programming approaches to **Kotlin**.
+
+* [Collectors](https://arrow-kt.io/learn/collections-functions/collectors/)
+
+    Collectors are a way to optimize computations involving several collection methods, each of them requiring a collection traversal.
+    Using collectors, it's possible to compute a number of predefined operations just in one traversal.
+    ```kotlin
+    // Without collectors: two passes
+    val average = list.sum() / list.size
+    
+    // With collectors: a sinngle pass
+    fun divide(x: Int, y: Int): Double = x.toDouble() / y.toDouble()
+    val averageCollector = zip(Collectors.sum, Collectors.length, ::divide)
+  
+    val average = list.collect(averageCollector)
+    ```
+* [Composition](https://arrow-kt.io/learn/collections-functions/utils/#partial-application)
+    ```kotlin
+    f compose g compose h = { f(g(h(it))) }
+    ```
+* [Partial application](https://arrow-kt.io/learn/collections-functions/utils/#partial-application)
+    
+    The library provides a number of `partiallyN` methods for functions. 
+    Such methods allow to apply only a part of the arguments to the function and return a new function with the rest of the arguments.
+    ```kotlin
+    fun dance(rounds: Int, person: String): Unit { TODO() }
+    
+    // Pure Kotlin
+    fun List<String>.everybodyDancesTwo() = forEach { dance(2, it) }
+    
+    // With arrow-kt
+    fun List<String>.everybodyDancesTwo() = forEach(::dance.partially1(2))
+    ```
+* [Currying](https://arrow-kt.io/learn/collections-functions/utils/#currying)
+    
+    Additionally, there are two methods: `curried` and `uncurried`.
+    There functions allow changing the singature of the function to the curried or uncurried version.
+
+* [Lenses and Traversals](https://arrow-kt.io/learn/immutable-data/lens/)
+    
+    Lenses are a way to work with immutable data structures. 
+    They allow to change the data in a way that doesn't break the immutability of the data.
+    ```kotlin
+    @optics data class Person(val name: String, val age: Int, val address: Address) {
+      companion object
+    }
+    // Turned into
+    // data class Person(val name: String, val age: Int, val address: Address) {
+    //   companion object {
+    //     val name: Lens<Person, String> = TODO()
+    //     val age: Lens<Person, Int> = TODO()
+    //     val address: Lens<Person, Address> = TODO()
+    //   }
+    // }
+    
+    fun example() {
+      val me = Person(
+        "Alejandro", 35, 
+        Address(Street("Kotlinstraat", 1), City("Hilversum", "Netherlands"))
+      )
+    
+      Person.name.get(me) shouldBe "Alejandro"
+      
+      val meAfterBirthdayParty = Person.age.modify(me) { it + 1 }
+      Person.age.get(meAfterBirthdayParty) shouldBe 36
+    
+      val newAddress = Address(Street("Kotlinplein", null), City("Amsterdam", "Netherlands"))
+      val meAfterMoving = Person.address.set(me, newAddress)
+      Person.address.get(meAfterMoving) shouldBe newAddress
+    }
+    ```
+  
+    Traversals are a way to transform elements of a collection in a smooth and convenient way:
+    ```kotlin
+    @optics data class Person(val name: String, val age: Int, val friends: List<Person>) {
+      companion object
+    }
+    
+    fun List<Person>.happyBirthdayOptics(): List<Person> =
+      Every.list<Person>().age.modify(this) { age -> age + 1 }
+    ```
 ## Collection literals in Kotlin
 
 There is an ongoing proposal on adding collection literals to **Kotlin**.
