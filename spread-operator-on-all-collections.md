@@ -535,6 +535,34 @@ First two methods are used for adding single elements and spread arguments to th
 The last method is responsible for finalizing the array and returning it.
 `IrArrayBuilder` chooses the right helper builder and then generates IR calls to the constructor, `add`/`addSpread` for each argument and `toArray`.
 
+```kotlin
+fun bar(vararg x: Int){
+}
+
+fun main() {
+    val x = intArrayOf(1, 2, 3)
+    bar(*x, *x)
+}
+```
+```java
+...
+NEW kotlin/jvm/internal/IntSpreadBuilder
+DUP
+ICONST_2
+INVOKESPECIAL kotlin/jvm/internal/IntSpreadBuilder.<init> (I)V
+ASTORE 1
+ALOAD 1
+ALOAD 0
+INVOKEVIRTUAL kotlin/jvm/internal/IntSpreadBuilder.addSpread (Ljava/lang/Object;)V
+ALOAD 1
+ALOAD 0
+INVOKEVIRTUAL kotlin/jvm/internal/IntSpreadBuilder.addSpread (Ljava/lang/Object;)V
+ALOAD 1
+INVOKEVIRTUAL kotlin/jvm/internal/IntSpreadBuilder.toArray ()[I
+INVOKESTATIC MainKt.bar ([I)V
+...
+```
+
 After that, the `vararg` parameter is finally desugared to a regular array parameter.
 
 ## Proposed implementation
