@@ -46,6 +46,7 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
 * [Alternative approaches](#alternative-approaches)
     * [Artificialy inserting needed cast in FIR](#artificialy-inserting-needed-cast-in-fir)
     * [Using boxed arrays only](#using-boxed-arrays-only)
+    * [Deprecating `vararg` keyword and moving to collection literals](#deprecating-vararg-keyword-and-moving-to-collection-literals)
 * [Potential extensions](#potential-extensions)
     * [Alternative underlying collection](#alternative-underlying-collection)
     * [Keyword variadics](#keyword-variadics)
@@ -765,6 +766,50 @@ This approach helps to get rid of any type incompatibility issues.
 However, there are several drawbacks:
 1. Boxed arrays introduce significantly more overhead compared to primitive arrays
 2. It totally breaks the backward compatibility with the existing code base
+
+### Deprecating `vararg` keyword and moving to collection literals
+
+The main idea is to use a more flexible and convenient approach with collection literals. 
+Currently, `vararg` functionality feels legacy, outdated and bulky.
+Arrays are not native to **Kotlin,** and it would be great to provide a way to use any other buildable type in the function signature.
+
+The ongoing proposal regarding collection literals (see [KT-43871](https://youtrack.jetbrains.com/issue/KT-43871/Collection-literals)) offers a way to build any collections in-place.
+The main idea of collection literals is to extend collection types and add some `build` method to their companion objects:
+```kotlin
+List [1, 2, 3, someOtherCollection]
+
+// Is converted to
+
+List<Int>.build {
+    add(1)
+    add(2)
+    add(3)
+    addAll(someOtherCollection)  
+}
+```
+
+Using such a feature we could get rid of the `vararg` keyword at all and use collection literals on the call site instead.
+This allows using parameters of any collection type (and not just arrays) and "spreading" existing collections to every collection type parameter.
+
+```kotlin
+fun foo(x: List<Int>, y: Set<Char>) {}
+
+
+fun main() {
+  val someIntArray = intArrayOf(1, 2, 3)
+  val someIntSet = setOf(4, 5, 6)
+  val someNumber = 10
+  
+  val someCharBoxedArray = arrayOf('a', 'b', 'c')
+  val someCharSet = setOf('d', 'e', 'f')
+  val someChar = 'x'
+  
+  foo(
+    [1, someNumber, 2, *someIntArray, *someIntSet],
+    ['a', 'b', 'c', *someCharSet, *someCharBoxedArray, someChar]
+  )
+}
+```
 
 ## Potential extensions
 
