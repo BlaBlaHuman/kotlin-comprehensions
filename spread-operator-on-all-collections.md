@@ -23,6 +23,7 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
     * [Desugaring to arrays](#desugaring-to-arrays)
     * [Spread operator](#spread-operator)
     * [Variadic functions in standard library](#variadic-functions-in-standard-library)
+    * [Additional issues](#additional-issues)
 * [Variadic functions in other programming languages](#variadic-functions-in-other-programming-languages)
     * [C](#c)
     * [Python](#python)
@@ -179,6 +180,33 @@ Functions for initializing primitive arrays directly rely on the compiler to do 
 public inline fun intArrayOf(vararg elements: Int): IntArray = elements
 ```
 
+### Additional issues
+
+* [KT-20113](https://youtrack.jetbrains.com/issue/KT-20113) Spread operator not working on vararg indexed access operator
+  
+  The issue is connected to the resolution of operator calls.
+  The square brackets notation for `get` operator doesn't support nested spread operator.
+  ```kotlin
+  class A {
+      operator fun get(vararg index: Int): Int {
+          return 0
+      }
+  }
+  
+  val a = A()
+  val b = a[1, 2, 3] // OK
+  val c = intArrayOf(1, 2, 3)
+  val d = a.get(*c) // OK
+  val e = a[c] // Error: Kotlin: Type mismatch: inferred type is IntArray but Int was expected
+  val f = a[*c] /* Error: Kotlin: None of the following functions can be called with the arguments supplied: 
+  public final operator fun times(other: Byte): Int defined in kotlin.Int
+  public final operator fun times(other: Double): Double defined in kotlin.Int
+  public final operator fun times(other: Float): Float defined in kotlin.Int
+  public final operator fun times(other: Int): Int defined in kotlin.Int
+  public final operator fun times(other: Long): Long defined in kotlin.Int
+  public final operator fun times(other: Short): Int defined in kotlin.Int
+  */
+  ```
 ## Variadic functions in other programming languages
 
 Early languages didn't formally introduce the concept of variadic functions and sometimes didn't require any function declarations in advance. 
@@ -870,7 +898,7 @@ Such an approach could be beneficial in many cases, e.g. when working with CLI a
 * [KT-6846](https://youtrack.jetbrains.com/issue/KT-6846) Spread operator doesn't work for boxed arrays (e.g. Array)
 * [KT-25350](https://youtrack.jetbrains.com/issue/KT-25350) Scalability Issue when combining collections and vararg function / spread operator
 * [KT-9471](https://youtrack.jetbrains.com/issue/KT-9471) Spread operator should be able to mix IntArray and Array
-* [KT-9495](https://youtrack.jetbrains.com/issue/KT-9495) vararg and substitution of primitives for type parameters&
+* [KT-9495](https://youtrack.jetbrains.com/issue/KT-9495) vararg and substitution of primitives for type parameters
 * [KT-27013](https://youtrack.jetbrains.com/issue/KT-27013) Spread operator doesn't work on primitive type vararg parameters
 * [KT-47711](https://youtrack.jetbrains.com/issue/KT-47711) Type mismatch when unpacking IntArray and re-packing to Array
 * [KT-19840](https://youtrack.jetbrains.com/issue/KT-19840) Spread operator doesn't work for non-primitive arrays
@@ -884,4 +912,9 @@ Such an approach could be beneficial in many cases, e.g. when working with CLI a
 * [KT-9429](https://youtrack.jetbrains.com/issue/KT-9429) Change 'vararg' semantics to always copy
 * [KT-22405](https://youtrack.jetbrains.com/issue/KT-22405) Extra array copies created on calling "string".format()
 * [Kotlin-Discussions](https://discuss.kotlinlang.org/t/scalability-issue-spread-operator-with-collections/8466) Scalability Issue: Spread operator with collections
-* [StackOverflow](https://www.reddit.com/r/Kotlin/comments/9gkfdv/question_regarding_spread_operator_and_varargs/) Question regarding spread operator and varargs
+* [Kotlin-Discussions](https://discuss.kotlinlang.org/t/allocation-of-vararge-with-spread-operator/2015) Allocation of vararge with spread operator
+* [Kotlin-Discussions](https://discuss.kotlinlang.org/t/hidden-allocations-when-using-vararg-and-spread-operator/1640) Hidden allocations when using vararg and spread operator
+* [StackOverflow](https://stackoverflow.com/questions/49892840/kotlin-android-spread-an-array-list-for-non-variadic-functions) Kotlin (Android) - Spread an Array/List for Non-Variadic Functions
+* [StackOverflow](https://stackoverflow.com/questions/60850350/kotlin-spread-operator-behaviour-on-chars-array) Kotlin spread operator behaviour on chars array
+* [r/kotlin](https://www.reddit.com/r/Kotlin/comments/9gkfdv/question_regarding_spread_operator_and_varargs/) Question regarding spread operator and varargs
+* [r/kotlin](https://www.reddit.com/r/Kotlin/comments/kslxzk/how_often_do_you_use_the_spread_operator/) How often do you use the spread operator "*" ?
