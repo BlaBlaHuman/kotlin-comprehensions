@@ -50,6 +50,8 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
     * [Deprecating `vararg` keyword and moving to collection literals](#deprecating-vararg-keyword-and-moving-to-collection-literals)
 * [Potential extensions](#potential-extensions)
     * [Alternative underlying collection](#alternative-underlying-collection)
+    * [Expand spread operator usage to objects](#expand-spread-operator-usage-to-objects)
+    * [`dataarg`](#dataarg)
     * [Keyword variadics](#keyword-variadics)
 * [Related discussions](#related-discussions)
 
@@ -846,8 +848,42 @@ The variadic functions still feel out of place due to the usage of non-native **
 It would be more natural to use `Iterable` as the underlying type for variadic functions.
 However, it's not that easy, as we have to preserve the compatibility with the existing code base and **Java**.
 
-### Keyword variadics
+### Expand spread operator usage to objects
 
+See [Kotlin Discussions](https://discuss.kotlinlang.org/t/spread-object-operator-missing-in-kotlin/7978) Spread-object operator missing in kotlin?
+
+A lot of requests were made to extend the spread operator usage to be able to unwrap not only arrays, but other kinds of objects.
+This approach comes directly from [**JavaScript**](#javascript), where spread operator has a lot of use cases when building new objects.
+
+### `dataarg`
+
+See [KT-8214](https://youtrack.jetbrains.com/issue/KT-8214/Allow-kind-of-vararg-but-for-data-class-parameter) "Allow kind of "vararg" but for data class parameter" and related issues 
+
+The concept of `dataarg` is the generalization of the `vararg` keyword to data classes construction.
+It's the extension of [the previous idea](#expand-spread-operator-usage-to-objects) to classes constructors.
+The main purpose is to be able to smoothly pass duplicating arguments through the sequence of calls.
+
+It should be possible to create a single data class parameter for all the duplicated parameters and pass it between constructors.
+However, on the call site it should be possible to pass the options in the named form and using any order.
+
+Such a feature removes the boilerplate code in cases when some class extends another one and has the same constructor parameters.
+```kotlin
+data class ButtonProps(val prop1: Int, val prop2: String, ...)
+
+class Button(props: ButtonProps) : Component { ... }
+class CustomButton(props: ButtonProps, customProp1: Boolean, ...) : Button(props) { ... }
+
+// Instead of
+// class Button(prop1: Int, prop2: String, ...)
+// class CustomButtor(prop1: Int, prop2: String, customProp1: Boolean, ...) : Button(prop1, prop2, ...)
+
+fun main() { 
+  val button = Button((prop1 = 42, prop2 = "helloWorld"))
+  val customButten = CustomButton((prop1 = 42, prop2 = "helloWorld"), customProp1 = false)
+}
+```
+
+### Keyword variadics
 The idea of keyword variadic arguments is a rare feature, that is present is some languages like **Python**.
 In **Python**, the keyword variadic parameter is marked with double asterisks `**` before the parameter name in the function signature.
 It allows passing a variadic number of arguments via named form and accessing them inside the function by the keyword string.
