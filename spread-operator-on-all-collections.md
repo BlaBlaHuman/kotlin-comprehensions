@@ -52,6 +52,7 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
     * [Alternative underlying collection](#alternative-underlying-collection)
     * [Expand spread operator usage to objects](#expand-spread-operator-usage-to-objects)
     * [`dataarg`](#dataarg)
+    * [One-or-more varargs](#one-or-more-varargs)
     * [Keyword variadics](#keyword-variadics)
 * [Related discussions](#related-discussions)
 
@@ -916,6 +917,35 @@ fun main() {
   val customButten = CustomButton((prop1 = 42, prop2 = "helloWorld"), customProp1 = false)
 }
 ```
+
+### One-or-more varargs
+See [KT-57266](https://youtrack.jetbrains.com/issue/KT-57266/One-or-more-varags) "One-or-more varags" and [KT-55890](https://youtrack.jetbrains.com/issue/KT-55890/Mandatory-varargs) "Mandatory varargs"
+
+Several proposals were made to introduce a new kind of variadic parameter that would require at least one argument to be passed.
+```kotlin
+// One or more elements checked at compile time when called with literals.
+// Calling with spread operator would still entail runtime checking, 
+// unless maybe a `NonEmptyArray` type was introduced and intrinsified.
+fun <T> foo(vararg+ elements: T) { 
+    // ...
+}
+
+fun main() {
+  foo() // Error: at least one element is required
+  foo(1) // OK
+  foo(1, 2, 3) // OK
+}
+
+```
+
+Currently, such behaviour could be mimicked by providing an additional regular parameter right before the `vararg` one:
+```kotlin
+fun <T> foo(head: T, vararg tail: T) {
+  val elements = arrayOf(head) + tail
+  // ...
+}
+```
+However, it results in additional array copy.
 
 ### Keyword variadics
 The idea of keyword variadic arguments is a rare feature, that is present is some languages like **Python**.
