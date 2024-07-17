@@ -160,6 +160,18 @@ fun main() {
 }
 ```
 
+This leads to a lot of boilerplate cast calls.
+A number of iterable types in **Kotlin** doesn't support direct casting to arrays (e.g. progression types), so the user has to call an additional cast, which results in two or more unnecessary copies.
+```kotlin
+fun foo(vararg x: Int) {
+}
+
+fun main() {
+    val prog: IntProgression = 1..10
+    foo(*prog.toList().toIntArray()) // IntProgression cannot be directly cast to IntArray
+}
+```
+
 [Sourcegraph](https://sourcegraph.com/search) is a tool that allows searching for regular expressions across all open repositories.
 Using **Sourcegraph**, it was found out that:
 
@@ -495,7 +507,7 @@ fun bar(vararg args: String, x: Int) {
   } 
   ```
 
-* As for the overriding, the most obvious and simple workaround is to create an overriding method that accepts boxed array data and then calls the real variadic method with this data casted to primitive array.
+* As for the overriding, the most obvious and simple workaround is to create an overriding method that accepts boxed array data and then calls the real variadic method with this data cast to primitive array.
   ```Kotlin
   abstract class A<T> {
       abstract fun foo(vararg x: T)
