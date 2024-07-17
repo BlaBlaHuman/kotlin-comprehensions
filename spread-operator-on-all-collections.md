@@ -578,6 +578,7 @@ It is done using `FirTypeResolveTransformer` on the `TYPES` resolution phase.
 
 ### Function call candidates gathering
 This step is done on `BODY_RESOLVE` phase for each function call.
+Depending on various aspects, such as receiver type, function name, arguments types, etc., the compiler gathers all the potential candidates for the function call.
 For each potential candidate, several checks are performed.
 One of these checks is argument type checking, which is done using `CheckArguments` checker stage.
 It compares the type of variadic arguments against the type of the `vararg` parameter (for single elements) or the type of `vararg` array (for spread arguments).
@@ -632,7 +633,7 @@ INVOKESTATIC MainKt.bar ([I)V
 After that, the `vararg` parameter is finally desugared to a regular array parameter.
 
 ## Proposed implementation
-We have to modify the last two steps ([Function call candidates gathering](#function-call-candidates-gathering) and [Vararg lowering phase](#vararglowering-stage)) in order to achieve the desired functionality.
+We have to modify the last two steps ([Function call candidates gathering](#function-call-candidates-gathering) and [Vararg lowering phase](#vararglowering-stage)) in order to achieve the desired functionality and allow using spread operator directly on iterable collections.
 
 ### Argument type checking
 Currently, when gathering candidates for a function call, all the spread arguments' types are checked against the type of the `vararg` array.
@@ -668,6 +669,7 @@ However, there is one more case that needs to be handled.
 When there is only one argument, which is spread, the compiler will try to call `copy` method on it.
 But if the spread argument is not an array, this will lead to a type cast error.
 To avoid this, for all cases with single non-array spread arguments, the compiler will just use the same strategy as for multiple mixed arguments (using additional builders).
+
 ## Results and performance evaluation
 
 ### Results
