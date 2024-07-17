@@ -221,6 +221,28 @@ public inline fun intArrayOf(vararg elements: Int): IntArray = elements
   public final operator fun times(other: Short): Int defined in kotlin.Int
   */
   ```
+  
+* [KT-62746](https://youtrack.jetbrains.com/issue/KT-62746/Kotlin-Native-allows-to-overload-by-varargs.-Kotlin-JVM-doesnt-allow-it) Kotlin/Native allows to overload by `vararg`s. Kotlin/JVM doesn't allow it
+  
+  Currently, there is an inconsistency between **Kotlin/JVM** and **Kotlin/Native** platforms.
+  The issue is connected to the way the compiler handles variadic function signature and calls resolution.
+  In **Kotlin/Native** it is possible to override a function with a regular array parameter using `vararg` parameter, while **Kotlin/JVM** prohibits it, as the signatures of two functions in **JVM** are identical.
+  ```kotlin
+  // Runs on Native, fails on JVM
+  
+  fun foo(bar: IntArray) {
+    println("array")
+  }
+  
+  fun foo(vararg bar: Int) {
+      println("vararg")
+  }
+  
+  fun main() {
+      foo(1, 2) // vararg
+      foo(intArrayOf(1, 2)) // array
+  }
+  ```
 ## Variadic functions in other programming languages
 
 Early languages didn't formally introduce the concept of variadic functions and sometimes didn't require any function declarations in advance. 
