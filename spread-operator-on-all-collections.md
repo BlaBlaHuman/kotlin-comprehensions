@@ -805,7 +805,7 @@ fun main() {
 
 ✅ Rewrite typechecking pipeline used for diagnostics
 
-❌ Add type checking tests
+✅ Add type checking tests
 
 ## Alternative approaches
 
