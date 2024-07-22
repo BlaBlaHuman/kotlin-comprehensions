@@ -47,6 +47,7 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
 * [Alternative approaches](#alternative-approaches)
     * [Artificialy inserting needed cast in FIR](#artificialy-inserting-needed-cast-in-fir)
     * [Using boxed arrays only](#using-boxed-arrays-only)
+    * [Making spread operator overloadable](#making-spread-operator-overloadable)
     * [Deprecating `vararg` keyword and moving to collection literals](#deprecating-vararg-keyword-and-moving-to-collection-literals)
 * [Potential extensions](#potential-extensions)
     * [Alternative underlying collection](#alternative-underlying-collection)
@@ -833,6 +834,32 @@ This approach helps to get rid of any type incompatibility issues.
 However, there are several drawbacks:
 1. Boxed arrays introduce significantly more overhead compared to primitive arrays
 2. It totally breaks the backward compatibility with the existing code base
+
+### Making spread operator overloadable
+
+Technically, at the moment there is no such thing as a spread operator in **Kotlin**.
+It is because spread operator is not defined as `operator fun` from the standard **Kotlin** library.
+The whole implementation is hidden under the hood of the compiler.
+
+However, it is possible to introduce a new operator that would be overloadable.
+
+```kotlin
+data class A(someField: Int) {
+  operator fun spread(): Array<Int> {
+      return arrayOf(someField)
+  }
+  operator fun spread(): IntArray {
+      return intArrayOf(someField)
+  }
+}
+```
+
+However, it would lead to additional complexity and unnecessary copying.
+Imagine that spread operator is now a real operator.
+Let's take some collection type, say `List`.
+The spread operator on `List` would have to create a new array and copy all the elements from the `List`.
+However, all the collections passed to the variadic functions would still have to be copied to one unified array.
+That implies a second copy for each collection. 
 
 ### Deprecating `vararg` keyword and moving to collection literals
 
