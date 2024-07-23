@@ -33,7 +33,8 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
 * [Current implementation](#current-implementation)
     * [Variadic function signature transformation](#variadic-function-signature-transformation)
     * [Function call candidates gathering](#function-call-candidates-gathering)
-    * [Vararg lowering phase](#vararglowering-stage)
+    * [Vararg lowering stage](#vararglowering-stage)
+    * [Variadic parameters from the `.class` files perspective](#variadic-parameters-from-the-class-files-perspective)
 * [Proposed implementation](#proposed-implementation)
     * [Argument type checking](#argument-type-checking)
     * [`VarargLowering` stage](#vararglowering-stage-1)
@@ -633,8 +634,25 @@ INVOKESTATIC MainKt.bar ([I)V
 
 After that, the `vararg` parameter is finally desugared to a regular array parameter.
 
+### Variadic parameters from the `.class` files perspective
+
+`.class` files compiled from **Kotlin** code contain **Kotlin**-specific `@kotlin.Metadata` along with the metadata used for **Java**.
+
+Variadic methods in `.class` files are marked with special [`ACC_VARARGS` flag](https://docs.oracle.com/javase/specs/jvms/se21/html/jvms-4.html).
+Such a flag means that the last method parameter is ellipsis (`...`), as in **JVM** only the last parameter can be variadic.
+
+When **Kotlin** code with variadic function is compiled, `ACC_VARARGS` flag depends on the position of the variadic parameter in the function signature.
+```kotlin
+fun foo(vararg x: Int) {} // ACC_VARARGS is set
+
+fun bar(vararg x: Int, something: String) {} // ACC_VARARGS is not set
+```
+
+However, `.class` files compiled from **Kotlin** also contain `@kotlin.Metadata` annotation, which still keeps the information about variadic parameters, even if they were not in the last position.
+This is needed such that **Kotlin** code from `.class` files can be correctly called from other **Kotlin** code.
+
 ## Proposed implementation
-We have to modify the last two steps ([Function call candidates gathering](#function-call-candidates-gathering) and [Vararg lowering phase](#vararglowering-stage)) in order to achieve the desired functionality and allow using spread operator directly on iterable collections.
+We have to modify the last two steps ([Function call candidates gathering](#function-call-candidates-gathering) and [Vararg lowering stage](#vararglowering-stage)) in order to achieve the desired functionality and allow using spread operator directly on iterable collections.
 
 ### Argument type checking
 Currently, when gathering candidates for a function call, all the spread arguments' types are checked against the type of the `vararg` array.
