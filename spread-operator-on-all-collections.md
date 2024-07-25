@@ -30,6 +30,7 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
     * [JavaScript](#javascript)
     * [Java](#java)
 * [Current workarounds](#current-workarounds)
+* [Proposed solution idea](#proposed-solution-idea)
 * [Current implementation](#current-implementation)
     * [Variadic function signature transformation](#variadic-function-signature-transformation)
     * [Function call candidates gathering](#function-call-candidates-gathering)
@@ -569,7 +570,34 @@ fun bar(vararg args: String, x: Int) {
   }
   ```
 
+## Proposed solution idea
+The proposed idea consists of two main parts:
+* **Change the argument type checking pipeline when gathering candidates for a function call.**
+  At the moment all spread arguments' types are checked against the type of the `vararg` array.
+  This is the source of most issues and it is also quite confusing for people those are not familiar with the implementation of variadic functions, as the error message is not clear.
+  ```kotlin
+  fun foo(vararg x: Int) {}
+  
+  foo(*listOf(1, 2, 3))
+  // Type mismatch:
+  // inferred type is List<Int> but IntArray was expected
+  ```
+  The proposed approach is to typecheck spread arguments only by the types of their elements. 
+  This means that if the `vararg` argument expects some type `T` to be passed, all the spread collections should contain elements of type `T` or its subtype.
+  ```kotlin
+  fun foo(vararg x: Int) {}
+  
+  foo(*listOf(1, 2, 3)) // OK
+  foo(*listOf("Hello"))
+  // Type mismatch:
+  // inferred type is String but Int was expected
+  ```
+  Additionally, the compiler throws a more informative error message in case of type mismatch.
 
+* **Extend the `VarargLowering` stage to support spread operator on all iterable collections.**
+  `VarargLowering` is a special stage that uses two helper spread builders to copy elements from all the passed collections to one unified array.
+  The helper builders already support some non-array types. 
+  These builders need to be extended to support all iterable collections, which is a completely utility task.
 ## Current implementation
 
 The whole current implementation can be split into three major steps:
