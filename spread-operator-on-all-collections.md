@@ -549,7 +549,7 @@ fun bar(vararg args: String, x: Int) {
   }
   ```
 
-* One of the [proposed workarounds](https://discuss.kotlinlang.org/t/scalability-issue-spread-operator-with-collections/8466) to avoid copying and to is to call a utility method in **Java** that calls the original vararg function:
+* One of the [proposed workarounds](https://discuss.kotlinlang.org/t/scalability-issue-spread-operator-with-collections/8466) to avoid copying is to call a utility method in **Java** that calls the original vararg function:
   ```Java
   // Java
   public class VarargUtil {
