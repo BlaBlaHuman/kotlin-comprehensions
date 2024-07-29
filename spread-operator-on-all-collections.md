@@ -574,7 +574,7 @@ fun bar(vararg args: String, x: Int) {
 The proposed idea consists of two main parts:
 * **Change the argument type checking pipeline when gathering candidates for a function call.**
   At the moment all spread arguments' types are checked against the type of the `vararg` array.
-  This is the source of most issues and it is also quite confusing for people those are not familiar with the implementation of variadic functions, as the error message is not clear.
+  This is the source of most issues, and it is also quite confusing for people those are not familiar with the implementation of variadic functions, as the error message is not clear.
   ```kotlin
   fun foo(vararg x: Int) {}
   
@@ -593,44 +593,62 @@ The proposed idea consists of two main parts:
   // inferred type is String but Int was expected
   ```
   Additionally, the compiler throws a more informative error message in case of type mismatch.
+  
+  The concrete proposed implementation can be seen in [Argument Type Checking](#argument-type-checking).
 
 * **Extend the `VarargLowering` stage to support spread operator on all iterable collections.**
   `VarargLowering` is a special stage that uses two helper spread builders to copy elements from all the passed collections to one unified array.
   The helper builders already support some non-array types. 
   These builders need to be extended to support all iterable collections, which is a completely utility task.
+
+  The concrete proposed implementation can be seen in [`VarargLowering` stage](#vararglowering-stage-1).
 ## Current implementation
 
 The whole current implementation can be split into three major steps:
 
 ### Variadic function signature transformation
 On this step, the original type of `vararg` parameter is replaced with the corresponding array type.
-It is done using `FirTypeResolveTransformer` on the `TYPES` resolution phase.
+It is done using `FirTypeResolveTransformer` (namely `org.jetbrains.kotlin.fir.resolve.transformers.TransformUtilsKt#transformTypeToArrayType` util method) on the `TYPES` resolution phase (all FIR resolution phases are listed in `org.jetbrains.kotlin.fir.declarations.FirResolvePhase` enum class).
 
 ### Function call candidates gathering
 This step is done on `BODY_RESOLVE` phase for each function call.
 Depending on various aspects, such as receiver type, function name, arguments types, etc., the compiler gathers all the potential candidates for the function call.
 For each potential candidate, several checks are performed.
-One of these checks is argument type checking, which is done using `CheckArguments` checker stage.
+One of these checks is argument type checking, which is done using `org.jetbrains.kotlin.fir.resolve.calls.CheckArguments` checker stage.
 It compares the type of variadic arguments against the type of the `vararg` parameter (for single elements) or the type of `vararg` array (for spread arguments).
 
 ### `VarargLowering` stage
 On the backend part, several lowering phases are executed, which desugar higher order concepts.
-On `VarargLowering` phase, all the passed variadic arguments are copied into one unified array on the call site.
-For this purpose, a special `IrArrayBuilder` is used to add array initialization to the generated IR.
+All **JVM** phases can be found in `org.jetbrains.kotlin.backend.jvm.JvmLoweringPhasesKt#jvmFilePhases`.
+On `VarargLowering` phase (`org.jetbrains.kotlin.backend.jvm.lower.VarargLowering`), all the passed variadic arguments are copied into one unified array on the call site.
+For this purpose, a special `org.jetbrains.kotlin.backend.jvm.ir.IrArrayBuilder` is used to add array initialization to the generated IR.
+
+This `IrArrayBuilder` chooses the most suitable strategy depending on the number of spread and non-spread arguments:
+```kotlin
+fun build(): IrExpression {
+    val array = when {
+        elements.isEmpty() -> newArray(0)
+        !hasSpread -> buildSimpleArray()
+        elements.size == 1 -> copyArray(elements.single().expression)
+        else -> buildComplexArray()
+    }
+    return coerce(array, arrayType)
+}
+```
 
 In cases with non-spread arguments only, the compiler just initializes the array of the required size and copies all the passed arguments using `set`.
 
 When there is only one argument, which is spread, the compiler copies the passed array using `Array.copyOf` or `System.arraycopy`.
 
-In cases of multiple arguments with at least one being spread, `IrArrayBuilder` utilizes two additional builders:
-* `PrimitiveSpreadBuilder` --- is an interface, used for primitive arrays.
+In cases of multiple arguments with at least one being spread, `org.jetbrains.kotlin.backend.jvm.ir.IrArrayBuilder` utilizes two additional builders:
+* `kotlin.jvm.internal.PrimitiveSpreadBuilder` --- is an abstract class, used for primitive arrays.
   It has a concrete implementation for every primitive type.
-* `SpreadBuilder` --- is a class used for non-primitive arrays.
+* `kotlin.jvm.internal.SpreadBuilder` --- is a class used for non-primitive arrays.
 
 These helper builders expose several methods: `add`, `addSpread` and `toArray`.
 First two methods are used for adding single elements and spread arguments to the array.
 The last method is responsible for finalizing the array and returning it.
-`IrArrayBuilder` chooses the right helper builder and then generates IR calls to the constructor, `add`/`addSpread` for each argument and `toArray`.
+`org.jetbrains.kotlin.backend.jvm.ir.IrArrayBuilder` chooses the right helper builder and then generates IR calls to the constructor, `add`/`addSpread` for each argument and `toArray`.
 
 ```kotlin
 fun bar(vararg x: Int){
@@ -683,7 +701,11 @@ This is needed such that **Kotlin** code from `.class` files can be correctly ca
 We have to modify the last two steps ([Function call candidates gathering](#function-call-candidates-gathering) and [Vararg lowering stage](#vararglowering-stage)) in order to achieve the desired functionality and allow using spread operator directly on iterable collections.
 
 ### Argument type checking
-Currently, when gathering candidates for a function call, all the spread arguments' types are checked against the type of the `vararg` array.
+After gathering all the candidates for a function call, a set of checkers derived from `org.jetbrains.kotlin.fir.resolve.calls.CheckerStage` is executed.
+One of such checkers is `org.jetbrains.kotlin.fir.resolve.calls.CheckArguments` that checks the types of all the passed arguments against the types of the function parameters.
+All the argument checking pipelines come to `org.jetbrains.kotlin.fir.resolve.calls.ArgumentsKt#checkApplicabilityForArgumentType` method in which all errors are reported based on various conditions.
+
+Currently, all the spread arguments' types are checked against the type of the `vararg` array.
 However, this is the main source of all the issues. 
 Moreover, it provides a strange and inconvenient type incompatibility message:
 ```kotlin
@@ -695,8 +717,10 @@ foo(*listOf("Hello"))
 ```
 
 The prototype resolves this problem by type checking spread arguments only by the type of their elements.
-This was done by introducing several special utilitiy functions.
-These functions are able to unwrap any array, `CharSequence` and `Iterable` type.
+For this goal, `org.jetbrains.kotlin.fir.resolve.calls.ArgumentsKt#checkApplicabilityForArgumentType` method was extended. 
+Now, if the passed argument is spread and the corresponding parameter is `vararg`, the method unwraps both the argument and the `vararg` array types and proceeds to further checks with the element types.
+This was done by introducing several special utilitiy functions (`org.jetbrains.kotlin.fir.types.ArrayUtilsKt#spreadableCollectionElementType` and others).
+These functions are able to retrive element types from any array, `CharSequence` and `Iterable` type.
 
 Type incompatibility errors are now more informative and clear:
 ```kotlin
@@ -709,13 +733,66 @@ foo(*listOf("Hello"))
 
 ### `VarargLowering` stage
 
-These builders were extended to support all types of spread arguments.
-In fact, `SpreadBuilder` already supported spread arguments of all types, except for primitive arrays.
+`kotlin.jvm.internal.SpreadBuilder` already supported spread arguments of all types, except for primitive arrays and `CharSequence`.
+However, it was easy to extend the builder, as just a few more branches for copying collection contents to the unified collection were needed.
+```kotlin
+// ...
+// Example for IntArray
+else if (container instanceof int[]) {
+    int[] array = (int[]) container;
+    if (array.length > 0) {
+        list.ensureCapacity(list.size() + array.length);
+        for (Integer j : array) {
+            list.add(j);
+        }
+    }
+}
+// ...
+```
+
+`kotlin.jvm.internal.PrimitiveSpreadBuilder` abstract class was extended in a similar way. 
 
 However, there is one more case that needs to be handled.
-When there is only one argument, which is spread, the compiler will try to call `copy` method on it.
+When there is only one argument, which is spread, `org.jetbrains.kotlin.backend.jvm.ir.IrArrayBuilder` will try to just insert a call to `copy` method on it to IR.
+
+```kotlin
+fun build(): IrExpression {
+    val array = when {
+        elements.isEmpty() -> newArray(0)
+        !hasSpread -> buildSimpleArray()
+        elements.size == 1 -> copyArray(elements.single().expression)
+        else -> buildComplexArray()
+    }
+    return coerce(array, arrayType)
+}
+```
+
 But if the spread argument is not an array, this will lead to a type cast error.
-To avoid this, for all cases with single non-array spread arguments, the compiler will just use the same strategy as for multiple mixed arguments (using additional builders).
+To avoid this, now for all cases with single non-array spread arguments the compiler will just use the same strategy as for multiple mixed arguments (using calls to additional spread builders).
+
+```kotlin
+private fun copyArray(spread: IrExpression): IrExpression {
+    if (spread.type == unwrappedArrayType) {
+        // If the argument type is equal to the vararg array type
+        if (spread is IrConstructorCall ||
+            (spread is IrFunctionAccessExpression && spread.symbol == builder.irSymbols.arrayOfNulls))
+            return spread
+
+        return builder.irBlock {
+            val spreadVar = if (spread is IrGetValue) spread.symbol.owner else irTemporary(spread)
+            val size = unwrappedArrayType.classOrNull!!.getPropertyGetter("size")!!
+            val arrayCopyOf = builder.irSymbols.getArraysCopyOfFunction(unwrappedArrayType as IrSimpleType)
+            +irCall(arrayCopyOf).apply {
+                putValueArgument(0, coerce(irGet(spreadVar), unwrappedArrayType))
+                putValueArgument(1, irCall(size).apply { dispatchReceiver = irGet(spreadVar) })
+            }
+
+        }
+    } else {
+        return buildComplexArray()
+    }
+}
+```
 
 ## Results and performance evaluation
 
