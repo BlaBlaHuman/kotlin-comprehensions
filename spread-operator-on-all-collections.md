@@ -35,6 +35,10 @@ This proposal suggests allowing using the *Spread operator* on all collections, 
     * [Variadic function signature transformation](#variadic-function-signature-transformation)
     * [Function call candidates gathering](#function-call-candidates-gathering)
     * [Vararg lowering stage](#vararglowering-stage)
+        * [JVM](#jvm)
+        * [Native](#native)
+        * [JS](#js)
+        * [WASM](#wasm)
     * [Variadic parameters from the `.class` files perspective](#variadic-parameters-from-the-class-files-perspective)
 * [Proposed implementation](#proposed-implementation)
     * [Argument type checking](#argument-type-checking)
@@ -619,6 +623,9 @@ It compares the type of variadic arguments against the type of the `vararg` para
 
 ### `VarargLowering` stage
 On the backend part, several lowering phases are executed, which desugar higher order concepts.
+
+
+#### JVM
 All **JVM** phases can be found in `org.jetbrains.kotlin.backend.jvm.JvmLoweringPhasesKt#jvmFilePhases`.
 On `VarargLowering` phase (`org.jetbrains.kotlin.backend.jvm.lower.VarargLowering`), all the passed variadic arguments are copied into one unified array on the call site.
 For this purpose, a special `org.jetbrains.kotlin.backend.jvm.ir.IrArrayBuilder` is used to add array initialization to the generated IR.
@@ -679,6 +686,34 @@ INVOKESTATIC MainKt.bar ([I)V
 ```
 
 After that, the `vararg` parameter is finally desugared to a regular array parameter.
+
+#### Native
+
+All **Native**-specific lowering stages are located in `org.jetbrains.kotlin.backend.konan.driver.phases.NativeLoweringPhasesKt`.
+
+**Native** backend uses `org.jetbrains.kotlin.backend.konan.lower.VarargInjectionLowering` lowering class.
+This backend utilizes the concept of `ArrayHandle`s (`org.jetbrains.kotlin.backend.konan.lower.VarargInjectionLowering.ArrayHandle`).
+These classes expose `set`, `copy`, `getter`, `contructor` and some other methods for different types of arrays.
+
+#### JS
+
+All **JS**-specific lowering stages are located in `org.jetbrains.kotlin.ir.backend.js.JsLoweringPhasesKt`
+
+**JS** backend uses `org.jetbrains.kotlin.ir.backend.js.lower.VarargLowering` lowering class to desugar variadic arguments.
+The general approach is a bit different from the one in **JVM**. 
+Here, no additional classes are used, all the data is copied on the lowering stage. 
+The compiler collects the data in array segments. 
+Each segment is either a spread argument or an array of non-spread consecutive arguments.
+After calculating all the segments, the compiler concatenates all the segments into one array.
+
+#### WASM
+
+All **WASM**-specific lowering stages are located in `org.jetbrains.kotlin.backend.wasm.WasmLoweringPhasesKt`.
+
+**Kotlin/WASM** uses `org.jetbrains.kotlin.backend.wasm.lower.WasmVarargExpressionLowering` class for desugaring.
+The approach is similar to the one in **JS** backend.
+The compiler collects all the data in segments and then concatenates them into one array.
+
 
 ### Variadic parameters from the `.class` files perspective
 
