@@ -695,6 +695,34 @@ All **Native**-specific lowering stages are located in `org.jetbrains.kotlin.bac
 This backend utilizes the concept of `ArrayHandle`s (`org.jetbrains.kotlin.backend.konan.lower.VarargInjectionLowering.ArrayHandle`).
 These classes expose `set`, `copy`, `getter`, `contructor` and some other methods for different types of arrays.
 
+```kotlin
+abstract inner class ArrayHandle(val arraySymbol: IrClassSymbol) {
+    val setMethodSymbol = with(arraySymbol.owner.functions) {
+        // For unsigned types use set method.
+        singleOrNull { it.name == KonanNameConventions.setWithoutBoundCheck } ?: single { it.name == OperatorNameConventions.SET }
+    }
+    val sizeGetterSymbol = arraySymbol.getPropertyGetter("size")!!
+    val copyIntoSymbol = symbols.copyInto[arraySymbol]!!
+    val copyOfSymbol = symbols.copyOf[arraySymbol]!!
+    protected val singleParameterConstructor =
+            arraySymbol.owner.constructors.find { it.valueParameters.size == 1 }!!
+
+    abstract fun createArray(builder: IrBuilderWithScope, elementType: IrType, size: IrExpression): IrExpression
+    abstract fun createStatic(
+            builder: IrBuilderWithScope,
+            elementType: IrType,
+            values: List<IrConstantValue>): IrConstantValue
+}
+```
+
+The general pipeline for **Native** is simillar.
+If there are no variadic parameters, the compiler just initializes an empty array. 
+
+If all the arguments are constant values, the compiler tries to initialize a static array copy of the required type.
+
+Otherwise, the compiler calculates the number of single arguments and elements in spread arguments and then initializes array of this size.
+After that, the compiler simply copies all the elements to the array and puts it on stack.
+
 #### JS
 
 All **JS**-specific lowering stages are located in `org.jetbrains.kotlin.ir.backend.js.JsLoweringPhasesKt`
@@ -706,6 +734,11 @@ The compiler collects the data in array segments.
 Each segment is either a spread argument or an array of non-spread consecutive arguments.
 After calculating all the segments, the compiler concatenates all the segments into one array.
 
+All missing variadic arguments are replaced with empty arrays.
+
+For single spread arguments copy is performed. 
+For `char`, `boolean` and `long` types a normal array copy is used, all other arrays are copied using slices.
+
 #### WASM
 
 All **WASM**-specific lowering stages are located in `org.jetbrains.kotlin.backend.wasm.WasmLoweringPhasesKt`.
@@ -713,7 +746,17 @@ All **WASM**-specific lowering stages are located in `org.jetbrains.kotlin.backe
 **Kotlin/WASM** uses `org.jetbrains.kotlin.backend.wasm.lower.WasmVarargExpressionLowering` class for desugaring.
 The approach is similar to the one in **JS** backend.
 The compiler collects all the data in segments and then concatenates them into one array.
+To represent segments of plain arguments `org.jetbrains.kotlin.backend.wasm.lower.WasmVarargExpressionLowering.VarargSegmentBuilder.Plain`,
+and to represent spread arguments `org.jetbrains.kotlin.backend.wasm.lower.WasmVarargExpressionLowering.VarargSegmentBuilder.Spread` is utilized.
+These helper classes expose `irSize` and `irCopyInto` methods.
 
+Additionally, the compiler uses `org.jetbrains.kotlin.backend.wasm.lower.WasmVarargExpressionLowering.ArrayDescr` to represent array types along with their methods.
+
+While the general idea seems similar to other backends, the **WASM** backend additionally creates a temporary variable for each argument to preserve argument evaluation order.
+
+In cases, when there are no variadic parameters, the compiler just initializes an empty array.
+
+When a single immediate spread argument is passed, the compiler passes it by reference.
 
 ### Variadic parameters from the `.class` files perspective
 
