@@ -624,7 +624,7 @@ It compares the type of variadic arguments against the type of the `vararg` para
 ### `VarargLowering` stage
 On the backend part, several lowering phases are executed, which desugar higher order concepts.
 There is a dedicated lowering phase for every backend. 
-However, in our proposal we will be only focusing on the **JVM** one.
+However, in our proposal we will be only focusing on the **JVM** one, as it's a fully utility task to extend all other lowering phases.
 
 #### JVM
 All **JVM** phases can be found in `org.jetbrains.kotlin.backend.jvm.JvmLoweringPhasesKt#jvmFilePhases`.
@@ -717,11 +717,10 @@ abstract inner class ArrayHandle(val arraySymbol: IrClassSymbol) {
 ```
 
 The general pipeline for **Native** is simillar.
-If there are no variadic parameters, the compiler just initializes an empty array. 
 
-If all the arguments are constant values, the compiler tries to initialize a static array copy of the required type.
-
-Otherwise, the compiler calculates the number of single arguments and elements in spread arguments and then initializes array of this size.
+* If there are no variadic parameters, the compiler just initializes an empty array.
+* If all the arguments are constant values, the compiler tries to initialize a static array copy of the required type.
+* Otherwise, the compiler calculates the number of single arguments and elements in spread arguments and then initializes array of this size.
 After that, the compiler simply copies all the elements to the array and puts it on stack.
 
 #### JS
@@ -735,10 +734,9 @@ The compiler collects the data in array segments.
 Each segment is either a spread argument or an array of non-spread consecutive arguments.
 After calculating all the segments, the compiler concatenates all the segments into one array.
 
-All missing variadic arguments are replaced with empty arrays.
-
-For single spread arguments copy is performed. 
-For `char`, `boolean` and `long` types a normal array copy is used, all other arrays are copied using slices.
+* All missing variadic arguments are replaced with empty arrays.
+* For single spread arguments copy is performed. 
+* For `char`, `boolean` and `long` types a normal array copy is used, all other arrays are copied using slices.
 
 #### WASM
 
@@ -753,11 +751,9 @@ These helper classes expose `irSize` and `irCopyInto` methods.
 
 Additionally, the compiler uses `org.jetbrains.kotlin.backend.wasm.lower.WasmVarargExpressionLowering.ArrayDescr` to represent array types along with their methods.
 
-While the general idea seems similar to other backends, the **WASM** backend additionally creates a temporary variable for each argument to preserve argument evaluation order.
-
-In cases, when there are no variadic parameters, the compiler just initializes an empty array.
-
-When a single immediate spread argument is passed, the compiler passes it by reference.
+* While the general idea seems similar to other backends, the **WASM** backend additionally creates a temporary variable for each argument to preserve argument evaluation order.
+* In cases, when there are no variadic parameters, the compiler just initializes an empty array.
+* When a single immediate spread argument is passed, the compiler passes it by reference.
 
 ### Variadic parameters from the `.class` files perspective
 
