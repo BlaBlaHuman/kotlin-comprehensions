@@ -623,7 +623,8 @@ It compares the type of variadic arguments against the type of the `vararg` para
 
 ### `VarargLowering` stage
 On the backend part, several lowering phases are executed, which desugar higher order concepts.
-
+There is a dedicated lowering phase for every backend. 
+However, in our proposal we will be only focusing on the **JVM** one.
 
 #### JVM
 All **JVM** phases can be found in `org.jetbrains.kotlin.backend.jvm.JvmLoweringPhasesKt#jvmFilePhases`.
