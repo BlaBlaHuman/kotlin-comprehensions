@@ -738,6 +738,124 @@ After calculating all the segments, the compiler concatenates all the segments i
 * For single spread arguments copy is performed. 
 * For `char`, `boolean` and `long` types a normal array copy is used, all other arrays are copied using slices.
 
+```kotlin
+// Kotlin
+
+fun fooInt(vararg x: Int) {
+}
+
+fun fooBoolean(vararg x: Boolean) {
+}
+
+class A
+
+fun fooA(vararg x: A) {
+}
+
+fun main() {
+    fooInt()
+    fooBoolean()
+    fooA()
+
+    fooInt(1, 2, 3)
+    fooBoolean(true, false, true)
+    fooA(A(), A(), A())
+
+    fooInt(*intArrayOf())
+    fooBoolean(*booleanArrayOf())
+    fooA(*arrayOf())
+
+    fooInt(*intArrayOf(4, 5, 6))
+    fooBoolean(*booleanArrayOf(true, false, true))
+    fooA(*arrayOf(A(), A(), A()))
+
+    val intArray = intArrayOf(7, 8, 9)
+    val booleanArray = booleanArrayOf(true, false)
+    val aArray = arrayOf(A(), A(), A())
+
+    fooInt(*intArray)
+    fooBoolean(*booleanArray)
+    fooA(*aArray)
+
+    fooInt(*intArray, 10, 11, *intArray)
+    fooBoolean(*booleanArray, true, false, *booleanArray)
+    fooA(*aArray, A(), A(), *aArray)
+
+}
+```
+```javascript
+// JavaScript
+
+// The following functions are imported from Kotlin/JS stdlib
+// booleanArrayOf
+// taggedArrayCopy
+// primitiveArrayConcat
+// arrayConcat
+
+function fooInt(x) {}
+
+function fooBoolean(x) {}
+
+function A() {}
+
+function fooA(x) {}
+
+function main() {
+    fooInt(new Int32Array([]));
+    fooBoolean(booleanArrayOf([]));
+    fooA([]);
+    
+    fooInt(new Int32Array([1, 2, 3]));
+    fooBoolean(booleanArrayOf([true, false, true]));
+    fooA([new A(), new A(), new A()]);
+    
+    // Inline function 'kotlin.intArrayOf' call
+    var tmp$ret$0 = new Int32Array([]);
+    fooInt(tmp$ret$0.slice());
+    // Inline function 'kotlin.booleanArrayOf' call
+    var tmp$ret$1 = booleanArrayOf([]);
+    fooBoolean(taggedArrayCopy(tmp$ret$1));
+    
+    // Inline function 'kotlin.arrayOf' call
+    // Inline function 'kotlin.js.unsafeCast' call
+    // Inline function 'kotlin.js.asDynamic' call
+    var tmp$ret$4 = [];
+    fooA(tmp$ret$4.slice());
+    
+    // Inline function 'kotlin.intArrayOf' call
+    var tmp$ret$5 = new Int32Array([4, 5, 6]);
+    fooInt(tmp$ret$5.slice());
+    
+    // Inline function 'kotlin.booleanArrayOf' call
+    var tmp$ret$6 = booleanArrayOf([true, false, true]);
+    fooBoolean(taggedArrayCopy(tmp$ret$6));
+    
+    // Inline function 'kotlin.arrayOf' call
+    // Inline function 'kotlin.js.unsafeCast' call
+    // Inline function 'kotlin.js.asDynamic' call
+    var tmp$ret$9 = [new A(), new A(), new A()];
+    fooA(tmp$ret$9.slice());
+    
+    // Inline function 'kotlin.intArrayOf' call
+    var intArray = new Int32Array([7, 8, 9]);
+    // Inline function 'kotlin.booleanArrayOf' call
+    var booleanArray = booleanArrayOf([true, false]);
+    // Inline function 'kotlin.arrayOf' call
+    // Inline function 'kotlin.js.unsafeCast' call
+    // Inline function 'kotlin.js.asDynamic' call
+    var aArray = [new A(), new A(), new A()];
+    
+    fooInt(intArray.slice());
+    fooBoolean(taggedArrayCopy(booleanArray));
+    fooA(aArray.slice());
+    
+    fooInt(primitiveArrayConcat([intArray, new Int32Array([10, 11]), intArray]));
+    fooBoolean(primitiveArrayConcat([booleanArray, booleanArrayOf([true, false]), booleanArray]));
+    fooA(arrayConcat([aArray, [new A(), new A()], aArray]));
+  }
+```
+
+
 #### WASM
 
 All **WASM**-specific lowering stages are located in `org.jetbrains.kotlin.backend.wasm.WasmLoweringPhasesKt`.
