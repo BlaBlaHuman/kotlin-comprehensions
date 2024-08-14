@@ -738,6 +738,9 @@ After calculating all the segments, the compiler concatenates all the segments i
 * For single spread arguments copy is performed. 
 * For `char`, `boolean` and `long` types a normal array copy is used, all other arrays are copied using slices.
 
+The standard library for **JS** is also written in **Kotlin** and then translated to **JS**.
+The examples of utilized functions can be seen [here](https://github.com/JetBrains/kotlin/blob/25d25be4f5260c219f68ff9070a0e18a146b35e1/libraries/stdlib/js/runtime/arrays.kt) and [here](https://github.com/JetBrains/kotlin/blob/25d25be4f5260c219f68ff9070a0e18a146b35e1/libraries/stdlib/js/runtime/noPackageHacks.kt).
+
 ```kotlin
 // Kotlin
 
